@@ -12,24 +12,24 @@ class SetSpec {
   final String? note;
 
   Map<String, dynamic> toJson() => {
-        'target': target.toJson(),
-        if (load != null) 'load': load!.toJson(),
-        if (note != null) 'note': note,
-      };
+    'target': target.toJson(),
+    if (load != null) 'load': load!.toJson(),
+    if (note != null) 'note': note,
+  };
 
   static SetSpec fromJson(Map<String, dynamic> json) => SetSpec(
-        target: Target.fromJson(json['target'] as Map<String, dynamic>),
-        load: json['load'] == null
-            ? null
-            : Load.fromJson(json['load'] as Map<String, dynamic>),
-        note: json['note'] as String?,
-      );
+    target: Target.fromJson(json['target'] as Map<String, dynamic>),
+    load: json['load'] == null
+        ? null
+        : Load.fromJson(json['load'] as Map<String, dynamic>),
+    note: json['note'] as String?,
+  );
 
   SetSpec copyWith({Target? target, Load? load, String? note}) => SetSpec(
-        target: target ?? this.target,
-        load: load ?? this.load,
-        note: note ?? this.note,
-      );
+    target: target ?? this.target,
+    load: load ?? this.load,
+    note: note ?? this.note,
+  );
 
   /// "12 Wdh. · 20 kg"
   String describe() {

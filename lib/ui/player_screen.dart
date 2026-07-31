@@ -177,11 +177,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
     for (var i = 0; i < day.items.length; i++) {
       final sets = (_logs[i] ?? {}).values.toList()
         ..sort((a, b) => a.setIndex.compareTo(b.setIndex));
-      items.add(ItemLog(
-        exerciseId: day.items[i].exercise.id,
-        sets: sets,
-        skipped: _skippedItems.contains(i),
-      ));
+      items.add(
+        ItemLog(
+          exerciseId: day.items[i].exercise.id,
+          sets: sets,
+          skipped: _skippedItems.contains(i),
+        ),
+      );
     }
 
     await state.completeDay(widget.programId, widget.globalDay, items: items);
@@ -327,37 +329,39 @@ class _PlayerScreenState extends State<PlayerScreen> {
       children: [
         switch (target) {
           DurationTarget() => _TimerPanel(
-              remaining: _remaining,
-              total: target.seconds,
-              color: color,
-              running: _running,
-              onTap: _toggleTimer,
-            ),
+            remaining: _remaining,
+            total: target.seconds,
+            color: color,
+            running: _running,
+            onTap: _toggleTimer,
+          ),
           RepsTarget() => _CounterPanel(
-              value: _achievedReps ?? target.reps,
-              color: color,
-              onAdjust: (delta) => setState(() {
-                _achievedReps =
-                    ((_achievedReps ?? target.reps) + delta).clamp(0, 999);
-              }),
-            ),
+            value: _achievedReps ?? target.reps,
+            color: color,
+            onAdjust: (delta) => setState(() {
+              _achievedReps = ((_achievedReps ?? target.reps) + delta).clamp(
+                0,
+                999,
+              );
+            }),
+          ),
           QuotaTarget() => _QuotaPanel(
-              target: target,
-              correct: _correct,
-              attempts: _attempts,
-              color: color,
-              onAnswer: (wasCorrect) => setState(() {
-                if (_attempts >= target.attempts) return;
-                _attempts++;
-                if (wasCorrect) _correct++;
-              }),
-              onUndo: _attempts == 0
-                  ? null
-                  : () => setState(() {
-                        _attempts--;
-                        if (_correct > _attempts) _correct = _attempts;
-                      }),
-            ),
+            target: target,
+            correct: _correct,
+            attempts: _attempts,
+            color: color,
+            onAnswer: (wasCorrect) => setState(() {
+              if (_attempts >= target.attempts) return;
+              _attempts++;
+              if (wasCorrect) _correct++;
+            }),
+            onUndo: _attempts == 0
+                ? null
+                : () => setState(() {
+                    _attempts--;
+                    if (_correct > _attempts) _correct = _attempts;
+                  }),
+          ),
           OpenTarget() => _OpenPanel(prompt: target.prompt),
         },
         if (set.load != null) ...[
@@ -387,8 +391,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     final p = AppTheme.paletteOf(context);
     final target = set.target;
     final quotaReady = target is! QuotaTarget || _attempts > 0;
-    final onColor =
-        p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg;
+    final onColor = p.onAccent;
 
     return Column(
       children: [
@@ -399,12 +402,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
           onPressed: quotaReady
               ? () => _recordAndAdvance(
-                    achieved: switch (target) {
-                      QuotaTarget() => _correct,
-                      RepsTarget() => _achievedReps ?? target.reps,
-                      _ => null,
-                    },
-                  )
+                  achieved: switch (target) {
+                    QuotaTarget() => _correct,
+                    RepsTarget() => _achievedReps ?? target.reps,
+                    _ => null,
+                  },
+                )
               : null,
           child: Text(_cursor == _steps.length - 1 ? 'FERTIG' : 'ERLEDIGT'),
         ),
@@ -432,8 +435,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Widget _buildSummary(BuildContext context, ResolvedDay day, Color color) {
     final p = AppTheme.paletteOf(context);
     final doneSets = _logs.values.fold<int>(0, (sum, m) => sum + m.length);
-    final onColor =
-        p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg;
+    final onColor = p.onAccent;
     final skipped = _skippedItems.isEmpty
         ? ''
         : ' · ${_skippedItems.length} AUSGELASSEN';
@@ -555,8 +557,8 @@ class _TimerPanel extends StatelessWidget {
               remaining == 0
                   ? 'ABGELAUFEN'
                   : running
-                      ? 'TIPPEN ZUM PAUSIEREN'
-                      : 'TIPPEN ZUM STARTEN',
+                  ? 'TIPPEN ZUM PAUSIEREN'
+                  : 'TIPPEN ZUM STARTEN',
               style: TextStyle(
                 fontFamily: Metrics.mono,
                 fontSize: 8.5,
@@ -822,8 +824,7 @@ class _AnswerButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = AppTheme.paletteOf(context);
     final enabled = onPressed != null;
-    final onTone =
-        p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg;
+    final onTone = p.onAccent;
 
     return Material(
       color: enabled ? tone : Colors.transparent,

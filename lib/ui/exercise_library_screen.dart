@@ -79,8 +79,9 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                       selected: _domainFilter == domain,
                       color: AppTheme.domainColor(context, domain),
                       onTap: () => setState(
-                        () => _domainFilter =
-                            _domainFilter == domain ? null : domain,
+                        () => _domainFilter = _domainFilter == domain
+                            ? null
+                            : domain,
                       ),
                     ),
                 ],

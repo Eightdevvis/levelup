@@ -83,12 +83,18 @@ class ZBox extends StatelessWidget {
                       height: 1.4,
                     ),
                     children: [
-                      TextSpan(text: '┤ ', style: TextStyle(color: p.fgFaint)),
+                      TextSpan(
+                        text: '┤ ',
+                        style: TextStyle(color: p.fgFaint),
+                      ),
                       TextSpan(
                         text: title!.toUpperCase(),
                         style: TextStyle(color: tone),
                       ),
-                      TextSpan(text: ' ├', style: TextStyle(color: p.fgFaint)),
+                      TextSpan(
+                        text: ' ├',
+                        style: TextStyle(color: p.fgFaint),
+                      ),
                     ],
                   ),
                 ),
@@ -127,10 +133,10 @@ class _Notch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        color: background,
-        padding: const EdgeInsets.symmetric(horizontal: 7),
-        child: child,
-      );
+    color: background,
+    padding: const EdgeInsets.symmetric(horizontal: 7),
+    child: child,
+  );
 }
 
 /// Versalien-Label mit Haarlinie dahinter — die Abschnittsmarke der Vorlage.
@@ -193,8 +199,7 @@ class DomainChip extends StatelessWidget {
         domain.toUpperCase(),
         style: TextStyle(
           fontFamily: Metrics.mono,
-          color:
-              p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg,
+          color: p.onAccent,
           fontSize: compact ? 9 : 9.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.3,

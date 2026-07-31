@@ -41,8 +41,7 @@ class DayScreen extends StatelessWidget {
     final p = AppTheme.paletteOf(context);
     final color = AppTheme.domainColor(context, program.domain);
     final isDone = state.progressFor(programId).isDayComplete(globalDay);
-    final onColor =
-        p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg;
+    final onColor = p.onAccent;
 
     final estimate = day.estimatedSeconds > 0
         ? ' · CA. ${formatDuration(day.estimatedSeconds).toUpperCase()}'

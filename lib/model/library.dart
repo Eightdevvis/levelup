@@ -22,44 +22,33 @@ class Library {
   final Map<String, Routine> routines;
   final Map<String, Program> programs;
 
-  Exercise exercise(String id) =>
-      exercises[id] ?? Exercise.placeholder(id);
+  Exercise exercise(String id) => exercises[id] ?? Exercise.placeholder(id);
 
   Routine? routine(String id) => routines[id];
 
   Program? program(String id) => programs[id];
 
-  bool get isEmpty =>
-      exercises.isEmpty && routines.isEmpty && programs.isEmpty;
+  bool get isEmpty => exercises.isEmpty && routines.isEmpty && programs.isEmpty;
 
   /// Legt ein Bundle über die Bibliothek. Gleiche IDs werden überschrieben —
   /// ein erneuter Import derselben Quelle aktualisiert also, statt zu doppeln.
   Library merge(Bundle bundle) => Library(
-        exercises: {
-          ...exercises,
-          for (final e in bundle.exercises) e.id: e,
-        },
-        routines: {
-          ...routines,
-          for (final r in bundle.routines) r.id: r,
-        },
-        programs: {
-          ...programs,
-          for (final p in bundle.programs) p.id: p,
-        },
-      );
+    exercises: {...exercises, for (final e in bundle.exercises) e.id: e},
+    routines: {...routines, for (final r in bundle.routines) r.id: r},
+    programs: {...programs, for (final p in bundle.programs) p.id: p},
+  );
 
   Library withoutProgram(String id) => Library(
-        exercises: exercises,
-        routines: routines,
-        programs: {...programs}..remove(id),
-      );
+    exercises: exercises,
+    routines: routines,
+    programs: {...programs}..remove(id),
+  );
 
   Bundle toBundle() => Bundle(
-        exercises: exercises.values.toList(growable: false),
-        routines: routines.values.toList(growable: false),
-        programs: programs.values.toList(growable: false),
-      );
+    exercises: exercises.values.toList(growable: false),
+    routines: routines.values.toList(growable: false),
+    programs: programs.values.toList(growable: false),
+  );
 
   /// Bundle mit genau dem, was [programId] braucht — für Export und Weitergabe.
   Bundle bundleForProgram(String programId) {
@@ -100,7 +89,9 @@ class Library {
       }
       for (final slot in routine.slots) {
         if (!exercises.containsKey(slot.exerciseId)) {
-          problems.add('Übung "${slot.exerciseId}" (in "${routine.name}") fehlt');
+          problems.add(
+            'Übung "${slot.exerciseId}" (in "${routine.name}") fehlt',
+          );
         }
       }
     }
@@ -127,15 +118,14 @@ class Bundle {
   final List<Program> programs;
   final int version;
 
-  bool get isEmpty =>
-      exercises.isEmpty && routines.isEmpty && programs.isEmpty;
+  bool get isEmpty => exercises.isEmpty && routines.isEmpty && programs.isEmpty;
 
   Map<String, dynamic> toJson() => {
-        'version': version,
-        'exercises': exercises.map((e) => e.toJson()).toList(),
-        'routines': routines.map((e) => e.toJson()).toList(),
-        'programs': programs.map((e) => e.toJson()).toList(),
-      };
+    'version': version,
+    'exercises': exercises.map((e) => e.toJson()).toList(),
+    'routines': routines.map((e) => e.toJson()).toList(),
+    'programs': programs.map((e) => e.toJson()).toList(),
+  };
 
   static Bundle fromJson(Map<String, dynamic> json) {
     final version = (json['version'] as num?)?.round() ?? kBundleVersion;

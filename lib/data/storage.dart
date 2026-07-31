@@ -77,19 +77,18 @@ class AppSnapshot {
     Library? library,
     Map<String, ProgramProgress>? progress,
     List<SessionLog>? sessions,
-  }) =>
-      AppSnapshot(
-        library: library ?? this.library,
-        progress: progress ?? this.progress,
-        sessions: sessions ?? this.sessions,
-      );
+  }) => AppSnapshot(
+    library: library ?? this.library,
+    progress: progress ?? this.progress,
+    sessions: sessions ?? this.sessions,
+  );
 
   Map<String, dynamic> toJson() => {
-        'version': kBundleVersion,
-        'library': library.toBundle().toJson(),
-        'progress': progress.values.map((e) => e.toJson()).toList(),
-        'sessions': sessions.map((e) => e.toJson()).toList(),
-      };
+    'version': kBundleVersion,
+    'library': library.toBundle().toJson(),
+    'progress': progress.values.map((e) => e.toJson()).toList(),
+    'sessions': sessions.map((e) => e.toJson()).toList(),
+  };
 
   static AppSnapshot fromJson(Map<String, dynamic> json) {
     final bundle = json['library'] == null

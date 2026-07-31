@@ -13,14 +13,15 @@ Future<void> _pumpApp(WidgetTester tester) async {
 /// Box-Titel werden als RichText mit `┤ … ├` gesetzt — `find.text` greift dort
 /// nicht, weil der Text aus mehreren Abschnitten besteht.
 Finder findRich(String needle) => find.byWidgetPredicate(
-      (w) =>
-          w is RichText &&
-          w.text.toPlainText().toUpperCase().contains(needle.toUpperCase()),
-    );
+  (w) =>
+      w is RichText &&
+      w.text.toPlainText().toUpperCase().contains(needle.toUpperCase()),
+);
 
 void main() {
-  testWidgets('Startbildschirm zeigt Wortmarke und Seed-Programme',
-      (tester) async {
+  testWidgets('Startbildschirm zeigt Wortmarke und Seed-Programme', (
+    tester,
+  ) async {
     await _pumpApp(tester);
 
     expect(find.text('LEVELUP'), findsOneWidget);
@@ -46,8 +47,9 @@ void main() {
     expect(find.text('PROGRAMM STARTEN'), findsOneWidget);
   });
 
-  testWidgets('Tag öffnen und Session starten führt in den Player',
-      (tester) async {
+  testWidgets('Tag öffnen und Session starten führt in den Player', (
+    tester,
+  ) async {
     await _pumpApp(tester);
 
     await tester.tap(find.text('Gehörtraining Grundstock'));
@@ -68,8 +70,9 @@ void main() {
     expect(find.text('DANEBEN'), findsOneWidget);
   });
 
-  testWidgets('Quoten-Übung zählt Treffer und führt zum Abschluss',
-      (tester) async {
+  testWidgets('Quoten-Übung zählt Treffer und führt zum Abschluss', (
+    tester,
+  ) async {
     await _pumpApp(tester);
 
     await tester.tap(find.text('Gehörtraining Grundstock'));

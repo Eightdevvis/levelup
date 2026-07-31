@@ -22,7 +22,9 @@ class ExerciseScreen extends StatelessWidget {
     final image = exercise.primaryImage;
 
     return Scaffold(
-      appBar: AppBar(title: Text(exercise.name, overflow: TextOverflow.ellipsis)),
+      appBar: AppBar(
+        title: Text(exercise.name, overflow: TextOverflow.ellipsis),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
         children: [
@@ -34,7 +36,10 @@ class ExerciseScreen extends StatelessWidget {
               DomainChip(exercise.domain),
               for (final tag in exercise.tags)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: scheme.onSurface.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.zero,
@@ -78,8 +83,10 @@ class ExerciseScreen extends StatelessWidget {
               children: [
                 for (final cue in exercise.cues)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.zero,
@@ -187,31 +194,31 @@ class _MediaBox extends StatelessWidget {
   }
 
   Widget _placeholder(ColorScheme scheme, String uri) => Container(
-        color: scheme.onSurface.withValues(alpha: 0.06),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.image_outlined,
-              size: 30,
-              color: scheme.onSurface.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              uri,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11.5,
-                color: scheme.onSurface.withValues(alpha: 0.45),
-              ),
-            ),
-          ],
+    color: scheme.onSurface.withValues(alpha: 0.06),
+    alignment: Alignment.center,
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.image_outlined,
+          size: 30,
+          color: scheme.onSurface.withValues(alpha: 0.3),
         ),
-      );
+        const SizedBox(height: 8),
+        Text(
+          uri,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11.5,
+            color: scheme.onSurface.withValues(alpha: 0.45),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _NumberedLine extends StatelessWidget {
@@ -252,7 +259,10 @@ class _NumberedLine extends StatelessWidget {
           ),
           const SizedBox(width: 11),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 14, height: 1.5)),
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 14, height: 1.5),
+            ),
           ),
         ],
       ),
@@ -283,7 +293,10 @@ class _BulletLine extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 14, height: 1.5)),
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 14, height: 1.5),
+            ),
           ),
         ],
       ),

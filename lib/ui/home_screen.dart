@@ -27,7 +27,8 @@ class HomeScreen extends StatelessWidget {
                   ? EmptyState(
                       icon: Icons.crop_square,
                       title: 'kein programm',
-                      message: 'Lass dir von einer AI einen Plan bauen '
+                      message:
+                          'Lass dir von einer AI einen Plan bauen '
                           'und füge ihn hier ein.',
                       action: OutlinedButton(
                         onPressed: () => Navigator.of(context).push(

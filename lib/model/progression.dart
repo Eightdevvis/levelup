@@ -10,9 +10,9 @@ enum ProgressionField {
 }
 
 ProgressionField _fieldFromString(String? value) => switch (value) {
-      'load' => ProgressionField.load,
-      _ => ProgressionField.target,
-    };
+  'load' => ProgressionField.load,
+  _ => ProgressionField.target,
+};
 
 /// Wie sich eine Übung über die Wochen einer Phase verändert.
 ///
@@ -38,18 +38,20 @@ sealed class Progression {
     return switch (kind) {
       'none' => const NoProgression(),
       'linear' => LinearProgression(
-          field: _fieldFromString(json['field'] as String?),
-          amount: (json['amount'] as num).toDouble(),
-          everyWeeks: (json['everyWeeks'] as num?)?.round() ?? 1,
-          cap: (json['cap'] as num?)?.toDouble(),
-        ),
+        field: _fieldFromString(json['field'] as String?),
+        amount: (json['amount'] as num).toDouble(),
+        everyWeeks: (json['everyWeeks'] as num?)?.round() ?? 1,
+        cap: (json['cap'] as num?)?.toDouble(),
+      ),
       'table' => TableProgression(
-          perWeek: (json['perWeek'] as List<dynamic>)
-              .map((e) => e == null
+        perWeek: (json['perWeek'] as List<dynamic>)
+            .map(
+              (e) => e == null
                   ? null
-                  : SetSpec.fromJson(e as Map<String, dynamic>))
-              .toList(growable: false),
-        ),
+                  : SetSpec.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(growable: false),
+      ),
       _ => throw FormatException('Unbekannter Progressions-Typ: $kind'),
     };
   }
@@ -95,12 +97,12 @@ class LinearProgression extends Progression {
 
   @override
   Map<String, dynamic> toJson() => {
-        'kind': kind,
-        'field': field.name,
-        'amount': amount,
-        'everyWeeks': everyWeeks,
-        if (cap != null) 'cap': cap,
-      };
+    'kind': kind,
+    'field': field.name,
+    'amount': amount,
+    'everyWeeks': everyWeeks,
+    if (cap != null) 'cap': cap,
+  };
 
   @override
   String describe() {
@@ -159,9 +161,9 @@ class TableProgression extends Progression {
 
   @override
   Map<String, dynamic> toJson() => {
-        'kind': kind,
-        'perWeek': perWeek.map((e) => e?.toJson()).toList(),
-      };
+    'kind': kind,
+    'perWeek': perWeek.map((e) => e?.toJson()).toList(),
+  };
 
   @override
   String describe() => 'Wochenplan (${perWeek.length} Wochen)';

@@ -11,10 +11,20 @@ import '../model/target.dart';
 /// laufen durch exakt dieselben Objekte. Wenn eine davon Sonderbehandlung
 /// bräuchte, wäre das Modell zu eng.
 Bundle seedBundle() => Bundle(
-      exercises: [..._violinExercises, ..._earExercises, ..._strengthExercises, ..._artExercises],
-      routines: [..._violinRoutines, ..._earRoutines, ..._strengthRoutines, ..._artRoutines],
-      programs: [_bachProgram, _earProgram, _strengthProgram, _artProgram],
-    );
+  exercises: [
+    ..._violinExercises,
+    ..._earExercises,
+    ..._strengthExercises,
+    ..._artExercises,
+  ],
+  routines: [
+    ..._violinRoutines,
+    ..._earRoutines,
+    ..._strengthRoutines,
+    ..._artRoutines,
+  ],
+  programs: [_bachProgram, _earProgram, _strengthProgram, _artProgram],
+);
 
 // ---------------------------------------------------------------------------
 // Geige / Notation
@@ -47,7 +57,8 @@ final _violinExercises = <Exercise>[
     id: 'v-rhythmus-klatschen',
     name: 'Rhythmus vom Blatt klatschen',
     domain: 'geige',
-    summary: 'Rhythmen ohne Tonhöhe lesen — die halbe Notation, isoliert geübt.',
+    summary:
+        'Rhythmen ohne Tonhöhe lesen — die halbe Notation, isoliert geübt.',
     instructions: [
       'Metronom auf ein ruhiges Tempo stellen.',
       'Takt anschauen, einmal still mitzählen.',
@@ -321,7 +332,10 @@ final _bachProgram = Program(
           'Jeden Tag derselbe kurze Block. Ziel ist Geschwindigkeit beim '
           'Erkennen, nicht Repertoire.',
       goal: '38 von 40 Notenkarten ohne Zögern.',
-      schedule: EveryDaySchedule(routineId: 'v-r-notation-taeglich', daysPerWeek: 6),
+      schedule: EveryDaySchedule(
+        routineId: 'v-r-notation-taeglich',
+        daysPerWeek: 6,
+      ),
     ),
     Phase(
       id: 'ph-2',
@@ -331,15 +345,17 @@ final _bachProgram = Program(
           'Wechsel zwischen Schreibtisch und Instrument. Die Theorie senkt die '
           'Menge, die beim Lesen gemerkt werden muss.',
       goal: 'Vorzeichen jeder Dur-Tonart aus dem Kopf.',
-      schedule: CycleSchedule(days: [
-        const DaySlot(routineId: 'v-r-theorie'),
-        const DaySlot(routineId: 'v-r-instrument'),
-        const DaySlot(routineId: 'v-r-theorie'),
-        const DaySlot(routineId: 'v-r-instrument'),
-        const DaySlot(routineId: 'v-r-notation-taeglich'),
-        const DaySlot(routineId: 'v-r-instrument'),
-        DaySlot.rest(),
-      ]),
+      schedule: CycleSchedule(
+        days: [
+          const DaySlot(routineId: 'v-r-theorie'),
+          const DaySlot(routineId: 'v-r-instrument'),
+          const DaySlot(routineId: 'v-r-theorie'),
+          const DaySlot(routineId: 'v-r-instrument'),
+          const DaySlot(routineId: 'v-r-notation-taeglich'),
+          const DaySlot(routineId: 'v-r-instrument'),
+          DaySlot.rest(),
+        ],
+      ),
     ),
     Phase(
       id: 'ph-3',
@@ -347,15 +363,17 @@ final _bachProgram = Program(
       weeks: 4,
       description: 'Jetzt erst das eigentliche Material — und zwar lesend.',
       goal: 'Einen unbekannten Satz im halben Tempo durchspielen.',
-      schedule: CycleSchedule(days: [
-        const DaySlot(routineId: 'v-r-bach'),
-        const DaySlot(routineId: 'v-r-instrument'),
-        const DaySlot(routineId: 'v-r-bach'),
-        DaySlot.rest(),
-        const DaySlot(routineId: 'v-r-bach'),
-        const DaySlot(routineId: 'v-r-theorie'),
-        DaySlot.rest(),
-      ]),
+      schedule: CycleSchedule(
+        days: [
+          const DaySlot(routineId: 'v-r-bach'),
+          const DaySlot(routineId: 'v-r-instrument'),
+          const DaySlot(routineId: 'v-r-bach'),
+          DaySlot.rest(),
+          const DaySlot(routineId: 'v-r-bach'),
+          const DaySlot(routineId: 'v-r-theorie'),
+          DaySlot.rest(),
+        ],
+      ),
     ),
   ],
 );
@@ -485,15 +503,17 @@ final _earProgram = Program(
       name: 'Diktat dazu',
       weeks: 4,
       goal: 'Achttaktige Melodie in zwei Durchgängen notieren.',
-      schedule: CycleSchedule(days: [
-        const DaySlot(routineId: 'g-r-taeglich'),
-        const DaySlot(routineId: 'g-r-diktat'),
-        const DaySlot(routineId: 'g-r-taeglich'),
-        const DaySlot(routineId: 'g-r-diktat'),
-        const DaySlot(routineId: 'g-r-taeglich'),
-        DaySlot.rest(),
-        DaySlot.rest(),
-      ]),
+      schedule: CycleSchedule(
+        days: [
+          const DaySlot(routineId: 'g-r-taeglich'),
+          const DaySlot(routineId: 'g-r-diktat'),
+          const DaySlot(routineId: 'g-r-taeglich'),
+          const DaySlot(routineId: 'g-r-diktat'),
+          const DaySlot(routineId: 'g-r-taeglich'),
+          DaySlot.rest(),
+          DaySlot.rest(),
+        ],
+      ),
     ),
   ],
 );
@@ -518,7 +538,10 @@ final _strengthExercises = <Exercise>[
     requirements: ['Langhantel'],
     tags: ['unterkoerper'],
     defaultSets: [
-      SetSpec(target: RepsTarget(reps: 8), load: Load(value: 40, unit: 'kg')),
+      SetSpec(
+        target: RepsTarget(reps: 8),
+        load: Load(value: 40, unit: 'kg'),
+      ),
     ],
   ),
   const Exercise(
@@ -574,9 +597,18 @@ final _strengthRoutines = <Routine>[
       ExerciseSlot(
         exerciseId: 'k-kniebeuge',
         sets: [
-          SetSpec(target: RepsTarget(reps: 8), load: Load(value: 40, unit: 'kg')),
-          SetSpec(target: RepsTarget(reps: 8), load: Load(value: 40, unit: 'kg')),
-          SetSpec(target: RepsTarget(reps: 8), load: Load(value: 40, unit: 'kg')),
+          SetSpec(
+            target: RepsTarget(reps: 8),
+            load: Load(value: 40, unit: 'kg'),
+          ),
+          SetSpec(
+            target: RepsTarget(reps: 8),
+            load: Load(value: 40, unit: 'kg'),
+          ),
+          SetSpec(
+            target: RepsTarget(reps: 8),
+            load: Load(value: 40, unit: 'kg'),
+          ),
         ],
         restSeconds: 120,
         progression: LinearProgression(
@@ -635,8 +667,14 @@ final _strengthRoutines = <Routine>[
       ExerciseSlot(
         exerciseId: 'k-kniebeuge',
         sets: [
-          SetSpec(target: RepsTarget(reps: 5), load: Load(value: 45, unit: 'kg')),
-          SetSpec(target: RepsTarget(reps: 5), load: Load(value: 45, unit: 'kg')),
+          SetSpec(
+            target: RepsTarget(reps: 5),
+            load: Load(value: 45, unit: 'kg'),
+          ),
+          SetSpec(
+            target: RepsTarget(reps: 5),
+            load: Load(value: 45, unit: 'kg'),
+          ),
         ],
         restSeconds: 120,
         progression: LinearProgression(
@@ -669,30 +707,34 @@ final _strengthProgram = Program(
       name: 'Aufbau',
       weeks: 6,
       goal: 'Kniebeuge 3×8 mit 55 kg.',
-      schedule: CycleSchedule(days: [
-        const DaySlot(routineId: 'k-r-a'),
-        DaySlot.rest(),
-        const DaySlot(routineId: 'k-r-b'),
-        DaySlot.rest(),
-        const DaySlot(routineId: 'k-r-a'),
-        DaySlot.rest(),
-        DaySlot.rest(),
-      ]),
+      schedule: CycleSchedule(
+        days: [
+          const DaySlot(routineId: 'k-r-a'),
+          DaySlot.rest(),
+          const DaySlot(routineId: 'k-r-b'),
+          DaySlot.rest(),
+          const DaySlot(routineId: 'k-r-a'),
+          DaySlot.rest(),
+          DaySlot.rest(),
+        ],
+      ),
     ),
     Phase(
       id: 'k-ph-2',
       name: 'Deload',
       weeks: 2,
       description: 'Weniger Last, gleiche Bewegungen — Erholung ohne Pause.',
-      schedule: CycleSchedule(days: [
-        const DaySlot(routineId: 'k-r-b'),
-        DaySlot.rest(),
-        const DaySlot(routineId: 'k-r-b'),
-        DaySlot.rest(),
-        DaySlot.rest(),
-        DaySlot.rest(),
-        DaySlot.rest(),
-      ]),
+      schedule: CycleSchedule(
+        days: [
+          const DaySlot(routineId: 'k-r-b'),
+          DaySlot.rest(),
+          const DaySlot(routineId: 'k-r-b'),
+          DaySlot.rest(),
+          DaySlot.rest(),
+          DaySlot.rest(),
+          DaySlot.rest(),
+        ],
+      ),
     ),
   ],
 );
@@ -801,15 +843,17 @@ final _artProgram = Program(
       name: 'Sehen',
       weeks: 6,
       goal: 'Gestenzeichnen 20 Minuten am Stück ohne Korrigieren.',
-      schedule: CycleSchedule(days: [
-        const DaySlot(routineId: 'z-r-warmup'),
-        const DaySlot(routineId: 'z-r-konstruktion'),
-        const DaySlot(routineId: 'z-r-warmup'),
-        DaySlot.rest(),
-        const DaySlot(routineId: 'z-r-konstruktion'),
-        const DaySlot(routineId: 'z-r-warmup'),
-        DaySlot.rest(),
-      ]),
+      schedule: CycleSchedule(
+        days: [
+          const DaySlot(routineId: 'z-r-warmup'),
+          const DaySlot(routineId: 'z-r-konstruktion'),
+          const DaySlot(routineId: 'z-r-warmup'),
+          DaySlot.rest(),
+          const DaySlot(routineId: 'z-r-konstruktion'),
+          const DaySlot(routineId: 'z-r-warmup'),
+          DaySlot.rest(),
+        ],
+      ),
     ),
   ],
 );

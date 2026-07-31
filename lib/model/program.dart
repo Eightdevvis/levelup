@@ -32,29 +32,31 @@ class ExerciseSlot {
   final bool optional;
 
   /// Die Sätze, wie sie in Woche [weekInPhase] (0-basiert) gelten.
-  List<SetSpec> setsForWeek(int weekInPhase) =>
-      sets.map((s) => progression.apply(s, weekInPhase)).toList(growable: false);
+  List<SetSpec> setsForWeek(int weekInPhase) => sets
+      .map((s) => progression.apply(s, weekInPhase))
+      .toList(growable: false);
 
   Map<String, dynamic> toJson() => {
-        'exerciseId': exerciseId,
-        'sets': sets.map((e) => e.toJson()).toList(),
-        if (restSeconds > 0) 'restSeconds': restSeconds,
-        if (note != null) 'note': note,
-        if (progression is! NoProgression) 'progression': progression.toJson(),
-        if (optional) 'optional': true,
-      };
+    'exerciseId': exerciseId,
+    'sets': sets.map((e) => e.toJson()).toList(),
+    if (restSeconds > 0) 'restSeconds': restSeconds,
+    if (note != null) 'note': note,
+    if (progression is! NoProgression) 'progression': progression.toJson(),
+    if (optional) 'optional': true,
+  };
 
   static ExerciseSlot fromJson(Map<String, dynamic> json) => ExerciseSlot(
-        exerciseId: json['exerciseId'] as String,
-        sets: (json['sets'] as List<dynamic>? ?? const [])
-            .map((e) => SetSpec.fromJson(e as Map<String, dynamic>))
-            .toList(growable: false),
-        restSeconds: (json['restSeconds'] as num?)?.round() ?? 0,
-        note: json['note'] as String?,
-        progression:
-            Progression.fromJson(json['progression'] as Map<String, dynamic>?),
-        optional: json['optional'] as bool? ?? false,
-      );
+    exerciseId: json['exerciseId'] as String,
+    sets: (json['sets'] as List<dynamic>? ?? const [])
+        .map((e) => SetSpec.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false),
+    restSeconds: (json['restSeconds'] as num?)?.round() ?? 0,
+    note: json['note'] as String?,
+    progression: Progression.fromJson(
+      json['progression'] as Map<String, dynamic>?,
+    ),
+    optional: json['optional'] as bool? ?? false,
+  );
 }
 
 /// Die "Liste" — eine geordnete Folge von Übungen, die als Einheit
@@ -74,20 +76,20 @@ class Routine {
   final List<ExerciseSlot> slots;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        if (description != null) 'description': description,
-        'slots': slots.map((e) => e.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    if (description != null) 'description': description,
+    'slots': slots.map((e) => e.toJson()).toList(),
+  };
 
   static Routine fromJson(Map<String, dynamic> json) => Routine(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        description: json['description'] as String?,
-        slots: (json['slots'] as List<dynamic>? ?? const [])
-            .map((e) => ExerciseSlot.fromJson(e as Map<String, dynamic>))
-            .toList(growable: false),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    description: json['description'] as String?,
+    slots: (json['slots'] as List<dynamic>? ?? const [])
+        .map((e) => ExerciseSlot.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false),
+  );
 }
 
 /// Ein Tag im Zyklus: entweder eine Liste oder Pause.
@@ -102,14 +104,14 @@ class DaySlot {
   bool get isRest => routineId == null;
 
   Map<String, dynamic> toJson() => {
-        if (routineId != null) 'routineId': routineId,
-        if (label != null) 'label': label,
-      };
+    if (routineId != null) 'routineId': routineId,
+    if (label != null) 'label': label,
+  };
 
   static DaySlot fromJson(Map<String, dynamic> json) => DaySlot(
-        routineId: json['routineId'] as String?,
-        label: json['label'] as String?,
-      );
+    routineId: json['routineId'] as String?,
+    label: json['label'] as String?,
+  );
 }
 
 /// Wie Listen auf Tage gelegt werden.
@@ -133,14 +135,14 @@ sealed class Schedule {
     final kind = json['kind'] as String?;
     return switch (kind) {
       'everyDay' => EveryDaySchedule(
-          routineId: json['routineId'] as String,
-          daysPerWeek: (json['daysPerWeek'] as num?)?.round() ?? 7,
-        ),
+        routineId: json['routineId'] as String,
+        daysPerWeek: (json['daysPerWeek'] as num?)?.round() ?? 7,
+      ),
       'cycle' => CycleSchedule(
-          days: (json['days'] as List<dynamic>)
-              .map((e) => DaySlot.fromJson(e as Map<String, dynamic>))
-              .toList(growable: false),
-        ),
+        days: (json['days'] as List<dynamic>)
+            .map((e) => DaySlot.fromJson(e as Map<String, dynamic>))
+            .toList(growable: false),
+      ),
       _ => throw FormatException('Unbekannter Schedule-Typ: $kind'),
     };
   }
@@ -166,8 +168,11 @@ class EveryDaySchedule extends Schedule {
   Set<String> get routineIds => {routineId};
 
   @override
-  Map<String, dynamic> toJson() =>
-      {'kind': kind, 'routineId': routineId, 'daysPerWeek': daysPerWeek};
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'routineId': routineId,
+    'daysPerWeek': daysPerWeek,
+  };
 }
 
 /// Der allgemeine Fall: ein Zyklus aus n Tagen, die sich wiederholen.
@@ -195,8 +200,10 @@ class CycleSchedule extends Schedule {
       days.map((d) => d.routineId).whereType<String>().toSet();
 
   @override
-  Map<String, dynamic> toJson() =>
-      {'kind': kind, 'days': days.map((e) => e.toJson()).toList()};
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'days': days.map((e) => e.toJson()).toList(),
+  };
 }
 
 /// Ein Abschnitt des Programms mit eigenem Charakter und eigener Länge —
@@ -226,22 +233,22 @@ class Phase {
   int get totalDays => weeks * schedule.cycleLength;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'weeks': weeks,
-        'schedule': schedule.toJson(),
-        if (description != null) 'description': description,
-        if (goal != null) 'goal': goal,
-      };
+    'id': id,
+    'name': name,
+    'weeks': weeks,
+    'schedule': schedule.toJson(),
+    if (description != null) 'description': description,
+    if (goal != null) 'goal': goal,
+  };
 
   static Phase fromJson(Map<String, dynamic> json) => Phase(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        weeks: (json['weeks'] as num).round(),
-        schedule: Schedule.fromJson(json['schedule'] as Map<String, dynamic>),
-        description: json['description'] as String?,
-        goal: json['goal'] as String?,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    weeks: (json['weeks'] as num).round(),
+    schedule: Schedule.fromJson(json['schedule'] as Map<String, dynamic>),
+    description: json['description'] as String?,
+    goal: json['goal'] as String?,
+  );
 }
 
 /// Das Programm: eine Folge von Phasen.
@@ -278,28 +285,28 @@ class Program {
       phases.expand((p) => p.schedule.routineIds).toSet();
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        if (description != null) 'description': description,
-        'domain': domain,
-        if (author != null) 'author': author,
-        if (tags.isNotEmpty) 'tags': tags,
-        'phases': phases.map((e) => e.toJson()).toList(),
-        if (rationale != null) 'rationale': rationale,
-      };
+    'id': id,
+    'name': name,
+    if (description != null) 'description': description,
+    'domain': domain,
+    if (author != null) 'author': author,
+    if (tags.isNotEmpty) 'tags': tags,
+    'phases': phases.map((e) => e.toJson()).toList(),
+    if (rationale != null) 'rationale': rationale,
+  };
 
   static Program fromJson(Map<String, dynamic> json) => Program(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        description: json['description'] as String?,
-        domain: json['domain'] as String? ?? 'allgemein',
-        author: json['author'] as String?,
-        tags: (json['tags'] as List<dynamic>? ?? const [])
-            .map((e) => e.toString())
-            .toList(growable: false),
-        phases: (json['phases'] as List<dynamic>? ?? const [])
-            .map((e) => Phase.fromJson(e as Map<String, dynamic>))
-            .toList(growable: false),
-        rationale: json['rationale'] as String?,
-      );
+    id: json['id'] as String,
+    name: json['name'] as String,
+    description: json['description'] as String?,
+    domain: json['domain'] as String? ?? 'allgemein',
+    author: json['author'] as String?,
+    tags: (json['tags'] as List<dynamic>? ?? const [])
+        .map((e) => e.toString())
+        .toList(growable: false),
+    phases: (json['phases'] as List<dynamic>? ?? const [])
+        .map((e) => Phase.fromJson(e as Map<String, dynamic>))
+        .toList(growable: false),
+    rationale: json['rationale'] as String?,
+  );
 }

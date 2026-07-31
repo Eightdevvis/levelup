@@ -28,9 +28,9 @@ sealed class Target {
       'duration' => DurationTarget(seconds: (json['seconds'] as num).round()),
       'reps' => RepsTarget(reps: (json['reps'] as num).round()),
       'quota' => QuotaTarget(
-          attempts: (json['attempts'] as num).round(),
-          required: (json['required'] as num).round(),
-        ),
+        attempts: (json['attempts'] as num).round(),
+        required: (json['required'] as num).round(),
+      ),
       'open' => OpenTarget(prompt: json['prompt'] as String?),
       _ => throw FormatException('Unbekannter Target-Typ: $kind'),
     };
@@ -54,7 +54,9 @@ class DurationTarget extends Target {
     if (seconds < 60) return '$seconds s';
     final minutes = seconds ~/ 60;
     final rest = seconds % 60;
-    return rest == 0 ? '$minutes min' : '$minutes:${rest.toString().padLeft(2, '0')} min';
+    return rest == 0
+        ? '$minutes min'
+        : '$minutes:${rest.toString().padLeft(2, '0')} min';
   }
 
   @override
@@ -102,8 +104,11 @@ class QuotaTarget extends Target {
   String get kind => 'quota';
 
   @override
-  Map<String, dynamic> toJson() =>
-      {'kind': kind, 'attempts': attempts, 'required': required};
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'attempts': attempts,
+    'required': required,
+  };
 
   @override
   String describe() => '$required/$attempts richtig';
@@ -114,9 +119,9 @@ class QuotaTarget extends Target {
 
   @override
   Target withProgressionValue(num value) => QuotaTarget(
-        attempts: attempts,
-        required: value.round().clamp(1, attempts),
-      );
+    attempts: attempts,
+    required: value.round().clamp(1, attempts),
+  );
 
   bool isPassed(int correct) => correct >= required;
 }
@@ -131,8 +136,10 @@ class OpenTarget extends Target {
   String get kind => 'open';
 
   @override
-  Map<String, dynamic> toJson() =>
-      {'kind': kind, if (prompt != null) 'prompt': prompt};
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    if (prompt != null) 'prompt': prompt,
+  };
 
   @override
   String describe() => prompt ?? 'offen';
@@ -158,9 +165,9 @@ class Load {
   Map<String, dynamic> toJson() => {'value': value, 'unit': unit};
 
   static Load fromJson(Map<String, dynamic> json) => Load(
-        value: (json['value'] as num).toDouble(),
-        unit: json['unit'] as String,
-      );
+    value: (json['value'] as num).toDouble(),
+    unit: json['unit'] as String,
+  );
 
   String describe() {
     final rounded = value == value.roundToDouble()

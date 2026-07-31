@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Farbwelt der App — übernommen aus ZENTRALE
-/// (`nvim/lua/zentrale_theme/palettes.lua`).
+/// Farbwelt der App — monochrom.
 ///
-/// Zwei Paletten mit denselben semantischen Rollen: `paper` (hell) ist das
-/// warme Sepia-Papier mit botanischen Akzenten, `cyber` (dunkel) echtes
-/// Schwarz mit Neon. Wer eine Farbe ändern will, ändert sie hier — die
-/// Zuordnung zu den Widgets bleibt gleich.
+/// Zwei Paletten mit denselben semantischen Rollen: `light` ist weißes Papier
+/// mit schwarzer Tinte, `dark` die Umkehrung. Keine Buntfarben: die Ordnung
+/// entsteht über Linien, Flächenumkehr und Schriftgrade, nicht über Farbe —
+/// was zur technischen Bildsprache aus ZENTRALE ohnehin besser passt als eine
+/// Palette. Wer das ändern will, ändert es hier; die Zuordnung zu den Widgets
+/// bleibt gleich.
 class Palette {
   const Palette({
     required this.brightness,
@@ -19,6 +20,7 @@ class Palette {
     required this.fgFaint,
     required this.border,
     required this.accent,
+    required this.onAccent,
     required this.error,
     required this.errorBg,
     required this.warn,
@@ -52,6 +54,9 @@ class Palette {
   /// Leitfarbe für Bedienelemente.
   final Color accent;
 
+  /// Was auf einer Akzentfläche steht — bei umgekehrter Darstellung.
+  final Color onAccent;
+
   final Color error;
 
   /// Fläche hinter einer Fehlermeldung (ZENTRALE: `diff_del`).
@@ -66,60 +71,52 @@ class Palette {
   /// Die Akzentreihe, aus der Domänen ihre Farbe bekommen.
   final List<Color> accents;
 
-  /// „paper" — warmes Sepia-Papier, Akzente aus dem Garten.
-  static const paper = Palette(
+  /// Weißes Blatt, schwarze Tinte.
+  ///
+  /// Die Graustufen sind reine Helligkeitsabstufungen von Schwarz — sie
+  /// tragen die Hierarchie (Haupttext, Nebentext, Randnotiz), ohne Farbe
+  /// einzuführen.
+  static const light = Palette(
     brightness: Brightness.light,
-    bg: Color(0xFFECE0C0), // Sepia-Papier
-    bgAlt: Color(0xFFE2D4AE), // Karton
-    bgDim: Color(0xFFE6DAB6),
-    bgSel: Color(0xFFD8DCAE), // Blattschatten
-    fg: Color(0xFF33291C), // Sepia-Tinte
-    fgDim: Color(0xFF5F563F),
-    fgFaint: Color(0xFF6E6551), // verblasster Bleistift
-    border: Color(0xFFC4B590),
-    accent: Color(0xFF2F5F7D), // Wasser-Indigo
-    error: Color(0xFF972920), // Rost
-    errorBg: Color(0xFFECCDBE),
-    warn: Color(0xFF765C14), // Pollen
-    ok: Color(0xFF44661D), // Blattgrün
-    okBg: Color(0xFFD5E2B2),
-    accents: [
-      Color(0xFF2F5F7D), // Wasser-Indigo
-      Color(0xFF44661D), // Blattgrün
-      Color(0xFF934726), // Terracotta
-      Color(0xFF8A3357), // Beere
-      Color(0xFF2F5A33), // Tannentiefe
-      Color(0xFF785222), // Rinde
-      Color(0xFF3A664B), // Salbei
-    ],
+    bg: Color(0xFFFFFFFF),
+    bgAlt: Color(0xFFFFFFFF), // Kästen heben sich allein durch die Linie ab
+    bgDim: Color(0xFFF4F4F4), // Eingabefelder, Hover
+    bgSel: Color(0xFFE8E8E8),
+    fg: Color(0xFF000000),
+    fgDim: Color(0xFF4A4A4A),
+    fgFaint: Color(0xFF8C8C8C),
+    border: Color(0xFF000000),
+    accent: Color(0xFF000000),
+    onAccent: Color(0xFFFFFFFF),
+    error: Color(0xFF000000),
+    errorBg: Color(0xFFF0F0F0),
+    warn: Color(0xFF4A4A4A),
+    ok: Color(0xFF000000),
+    okBg: Color(0xFFF0F0F0),
+    // Alle Domänen schwarz: unterschieden werden sie über ihren Namen im
+    // eingekerbten Titel, nicht über einen Farbcode.
+    accents: [Color(0xFF000000)],
   );
 
-  /// „cyber" — echtes Schwarz, Neon-Palette.
-  static const cyber = Palette(
+  /// Die Umkehrung — schwarzes Blatt, weiße Tinte.
+  static const dark = Palette(
     brightness: Brightness.dark,
     bg: Color(0xFF000000),
-    bgAlt: Color(0xFF05080A),
-    bgDim: Color(0xFF070D10),
-    bgSel: Color(0xFF16333D),
-    fg: Color(0xFFCCF7FF),
-    fgDim: Color(0xFF7FB3BF),
-    fgFaint: Color(0xFF577C8A),
-    border: Color(0xFF123039),
-    accent: Color(0xFF00F0FF), // Neon-Cyan
-    error: Color(0xFFFF2F5E),
-    errorBg: Color(0xFF2A0812),
-    warn: Color(0xFFFFE93D),
-    ok: Color(0xFF00FF9C),
-    okBg: Color(0xFF06251C),
-    accents: [
-      Color(0xFF00F0FF), // Cyan
-      Color(0xFF00FF9C), // Spring
-      Color(0xFFFF7A18), // Orange
-      Color(0xFFFF2BD6), // Magenta
-      Color(0xFFFFE93D), // Gelb
-      Color(0xFFA56BFF), // Violett
-      Color(0xFF38BDFF), // Azur
-    ],
+    bgAlt: Color(0xFF000000),
+    bgDim: Color(0xFF141414),
+    bgSel: Color(0xFF242424),
+    fg: Color(0xFFFFFFFF),
+    fgDim: Color(0xFFB4B4B4),
+    fgFaint: Color(0xFF767676),
+    border: Color(0xFFFFFFFF),
+    accent: Color(0xFFFFFFFF),
+    onAccent: Color(0xFF000000),
+    error: Color(0xFFFFFFFF),
+    errorBg: Color(0xFF1A1A1A),
+    warn: Color(0xFFB4B4B4),
+    ok: Color(0xFFFFFFFF),
+    okBg: Color(0xFF1A1A1A),
+    accents: [Color(0xFFFFFFFF)],
   );
 }
 
@@ -152,31 +149,27 @@ class AppTheme {
   ///
   /// Bewusst aus dem Kontext abgeleitet und nicht global gemerkt: `theme` und
   /// `darkTheme` werden beide gebaut, ein globaler Merker würde also immer die
-  /// zuletzt gebaute Palette zeigen — und damit im hellen Modus die
-  /// Neon-Farben.
+  /// zuletzt gebaute Palette zeigen — im hellen Modus käme die dunkle heraus.
   static Palette paletteOf(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? Palette.cyber
-          : Palette.paper;
+      ? Palette.dark
+      : Palette.light;
 
-  static ThemeData light() => build(Palette.paper);
+  static ThemeData light() => build(Palette.light);
 
-  static ThemeData dark() => build(Palette.cyber);
+  static ThemeData dark() => build(Palette.dark);
 
   static ThemeData build(Palette p) {
-    final onAccent = p.brightness == Brightness.light
-        ? const Color(0xFFF4ECD6) // helles Papier auf dunkler Tinte
-        : p.bg;
+    final onAccent = p.onAccent;
 
     final scheme = ColorScheme(
       brightness: p.brightness,
       primary: p.accent,
       onPrimary: onAccent,
-      // Erfolgs-/Hinweisfläche: auf Papier der Blattschatten, im Cyber-Modus
-      // der Diff-Grünton. Wird für die Rückmeldung nach einem Import benutzt.
+      // Fläche für die Rückmeldung nach einem Import.
       primaryContainer: p.okBg,
       onPrimaryContainer: p.fg,
-      secondary: p.accents[1],
+      secondary: p.accent,
       onSecondary: onAccent,
       secondaryContainer: p.bgSel,
       onSecondaryContainer: p.fg,
@@ -358,7 +351,12 @@ class AppTheme {
       bodyMedium: s(12.5),
       bodySmall: s(11.5, c: p.fgDim),
       labelLarge: s(12, w: FontWeight.w500, track: Metrics.trackWide),
-      labelMedium: s(10.5, w: FontWeight.w700, track: Metrics.trackWider, c: p.fgFaint),
+      labelMedium: s(
+        10.5,
+        w: FontWeight.w700,
+        track: Metrics.trackWider,
+        c: p.fgFaint,
+      ),
     );
   }
 

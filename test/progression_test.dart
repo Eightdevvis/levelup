@@ -57,10 +57,7 @@ void main() {
     );
 
     test('steigert das Gewicht, nicht die Wiederholungen', () {
-      const rule = LinearProgression(
-        field: ProgressionField.load,
-        amount: 2.5,
-      );
+      const rule = LinearProgression(field: ProgressionField.load, amount: 2.5);
       final week4 = rule.apply(base, 4);
       expect(week4.load!.value, 50);
       expect((week4.target as RepsTarget).reps, 8);
@@ -106,11 +103,13 @@ void main() {
 
   group('TableProgression', () {
     test('nimmt den Eintrag der jeweiligen Woche', () {
-      const rule = TableProgression(perWeek: [
-        SetSpec(target: RepsTarget(reps: 5)),
-        SetSpec(target: RepsTarget(reps: 8)),
-        SetSpec(target: RepsTarget(reps: 3)), // Deload
-      ]);
+      const rule = TableProgression(
+        perWeek: [
+          SetSpec(target: RepsTarget(reps: 5)),
+          SetSpec(target: RepsTarget(reps: 8)),
+          SetSpec(target: RepsTarget(reps: 3)), // Deload
+        ],
+      );
       const base = SetSpec(target: RepsTarget(reps: 99));
       expect((rule.apply(base, 0).target as RepsTarget).reps, 5);
       expect((rule.apply(base, 1).target as RepsTarget).reps, 8);
@@ -118,20 +117,24 @@ void main() {
     });
 
     test('hält den letzten Eintrag, wenn die Phase länger ist', () {
-      const rule = TableProgression(perWeek: [
-        SetSpec(target: RepsTarget(reps: 5)),
-        SetSpec(target: RepsTarget(reps: 8)),
-      ]);
+      const rule = TableProgression(
+        perWeek: [
+          SetSpec(target: RepsTarget(reps: 5)),
+          SetSpec(target: RepsTarget(reps: 8)),
+        ],
+      );
       const base = SetSpec(target: RepsTarget(reps: 99));
       expect((rule.apply(base, 7).target as RepsTarget).reps, 8);
     });
 
     test('null bedeutet "wie in der Woche davor"', () {
-      const rule = TableProgression(perWeek: [
-        SetSpec(target: RepsTarget(reps: 5)),
-        null,
-        SetSpec(target: RepsTarget(reps: 9)),
-      ]);
+      const rule = TableProgression(
+        perWeek: [
+          SetSpec(target: RepsTarget(reps: 5)),
+          null,
+          SetSpec(target: RepsTarget(reps: 9)),
+        ],
+      );
       const base = SetSpec(target: RepsTarget(reps: 99));
       expect((rule.apply(base, 1).target as RepsTarget).reps, 5);
       expect((rule.apply(base, 2).target as RepsTarget).reps, 9);

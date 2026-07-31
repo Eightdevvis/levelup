@@ -74,23 +74,27 @@ class AppState extends ChangeNotifier {
 
   Future<void> startProgram(String programId) async {
     if (_snapshot.progress.containsKey(programId)) return;
-    _snapshot = _snapshot.copyWith(progress: {
-      ..._snapshot.progress,
-      programId: ProgramProgress(
-        programId: programId,
-        startedAt: DateTime.now(),
-      ),
-    });
+    _snapshot = _snapshot.copyWith(
+      progress: {
+        ..._snapshot.progress,
+        programId: ProgramProgress(
+          programId: programId,
+          startedAt: DateTime.now(),
+        ),
+      },
+    );
     notifyListeners();
     await _persist();
   }
 
   Future<void> setCurrentDay(String programId, int globalDay) async {
     final current = progressFor(programId);
-    _snapshot = _snapshot.copyWith(progress: {
-      ..._snapshot.progress,
-      programId: current.copyWith(currentDay: globalDay),
-    });
+    _snapshot = _snapshot.copyWith(
+      progress: {
+        ..._snapshot.progress,
+        programId: current.copyWith(currentDay: globalDay),
+      },
+    );
     notifyListeners();
     await _persist();
   }
@@ -114,10 +118,13 @@ class AppState extends ChangeNotifier {
 
     // Ein erneuter Durchlauf desselben Tages ersetzt den alten Eintrag,
     // statt den Verlauf mit Dubletten zu füllen.
-    final sessions = _snapshot.sessions
-        .where((s) => !(s.programId == programId && s.globalDay == globalDay))
-        .toList()
-      ..add(log);
+    final sessions =
+        _snapshot.sessions
+            .where(
+              (s) => !(s.programId == programId && s.globalDay == globalDay),
+            )
+            .toList()
+          ..add(log);
 
     _snapshot = _snapshot.copyWith(
       progress: {..._snapshot.progress, programId: updated},
@@ -131,8 +138,9 @@ class AppState extends ChangeNotifier {
     final progress = {..._snapshot.progress}..remove(programId);
     _snapshot = _snapshot.copyWith(
       progress: progress,
-      sessions:
-          _snapshot.sessions.where((s) => s.programId != programId).toList(),
+      sessions: _snapshot.sessions
+          .where((s) => s.programId != programId)
+          .toList(),
     );
     notifyListeners();
     await _persist();
@@ -143,8 +151,9 @@ class AppState extends ChangeNotifier {
     _snapshot = _snapshot.copyWith(
       library: _snapshot.library.withoutProgram(programId),
       progress: progress,
-      sessions:
-          _snapshot.sessions.where((s) => s.programId != programId).toList(),
+      sessions: _snapshot.sessions
+          .where((s) => s.programId != programId)
+          .toList(),
     );
     notifyListeners();
     await _persist();

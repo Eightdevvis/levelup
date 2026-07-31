@@ -33,7 +33,8 @@ class DayRef {
       other.dayInCycle == dayInCycle;
 
   @override
-  int get hashCode => Object.hash(globalDay, phaseIndex, weekInPhase, dayInCycle);
+  int get hashCode =>
+      Object.hash(globalDay, phaseIndex, weekInPhase, dayInCycle);
 }
 
 /// Eine Übung, fertig aufgelöst für einen konkreten Tag: Übungsobjekt plus
@@ -162,11 +163,13 @@ class ProgramResolver {
     }
 
     final items = routine.slots
-        .map((slot) => ResolvedItem(
-              slot: slot,
-              exercise: library.exercise(slot.exerciseId),
-              sets: slot.setsForWeek(ref.weekInPhase),
-            ))
+        .map(
+          (slot) => ResolvedItem(
+            slot: slot,
+            exercise: library.exercise(slot.exerciseId),
+            sets: slot.setsForWeek(ref.weekInPhase),
+          ),
+        )
         .toList(growable: false);
 
     return ResolvedDay(

@@ -114,9 +114,7 @@ class _ProgramScreenState extends State<ProgramScreen> {
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: color,
-              foregroundColor: p.brightness == Brightness.light
-                  ? const Color(0xFFF4ECD6)
-                  : p.bg,
+              foregroundColor: p.onAccent,
             ),
             onPressed: () async {
               await state.startProgram(program.id);
@@ -128,7 +126,9 @@ class _ProgramScreenState extends State<ProgramScreen> {
               );
             },
             child: Text(
-              state.hasStarted(program.id) ? 'WEITERMACHEN' : 'PROGRAMM STARTEN',
+              state.hasStarted(program.id)
+                  ? 'WEITERMACHEN'
+                  : 'PROGRAMM STARTEN',
             ),
           ),
           const SectionLabel('phasen'),
@@ -462,8 +462,7 @@ class _DaySquare extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = AppTheme.paletteOf(context);
-    final onColor =
-        p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg;
+    final onColor = p.onAccent;
 
     late final Color background;
     late final Color foreground;
@@ -485,7 +484,9 @@ class _DaySquare extends StatelessWidget {
     }
 
     return Tooltip(
-      message: day.isRest ? 'Pause' : '${day.title} · ${day.items.length} Übungen',
+      message: day.isRest
+          ? 'Pause'
+          : '${day.title} · ${day.items.length} Übungen',
       child: GestureDetector(
         onTap: day.isRest ? null : onTap,
         child: Container(

@@ -17,22 +17,30 @@ Library _fixture() {
   ];
 
   const routines = [
-    Routine(id: 'r1', name: 'Liste eins', slots: [
-      ExerciseSlot(
-        exerciseId: 'e1',
-        sets: [SetSpec(target: RepsTarget(reps: 10))],
-        progression: LinearProgression(
-          field: ProgressionField.target,
-          amount: 2,
+    Routine(
+      id: 'r1',
+      name: 'Liste eins',
+      slots: [
+        ExerciseSlot(
+          exerciseId: 'e1',
+          sets: [SetSpec(target: RepsTarget(reps: 10))],
+          progression: LinearProgression(
+            field: ProgressionField.target,
+            amount: 2,
+          ),
         ),
-      ),
-    ]),
-    Routine(id: 'r2', name: 'Liste zwei', slots: [
-      ExerciseSlot(
-        exerciseId: 'e2',
-        sets: [SetSpec(target: DurationTarget(seconds: 60))],
-      ),
-    ]),
+      ],
+    ),
+    Routine(
+      id: 'r2',
+      name: 'Liste zwei',
+      slots: [
+        ExerciseSlot(
+          exerciseId: 'e2',
+          sets: [SetSpec(target: DurationTarget(seconds: 60))],
+        ),
+      ],
+    ),
   ];
 
   final program = Program(
@@ -49,20 +57,20 @@ Library _fixture() {
         id: 'b',
         name: 'Phase B',
         weeks: 2,
-        schedule: CycleSchedule(days: [
-          const DaySlot(routineId: 'r1'),
-          const DaySlot(routineId: 'r2'),
-          DaySlot.rest(),
-        ]),
+        schedule: CycleSchedule(
+          days: [
+            const DaySlot(routineId: 'r1'),
+            const DaySlot(routineId: 'r2'),
+            DaySlot.rest(),
+          ],
+        ),
       ),
     ],
   );
 
-  return const Library().merge(Bundle(
-    exercises: exercises,
-    routines: routines,
-    programs: [program],
-  ));
+  return const Library().merge(
+    Bundle(exercises: exercises, routines: routines, programs: [program]),
+  );
 }
 
 void main() {
@@ -164,25 +172,36 @@ void main() {
 
   group('Fehlende Verweise', () {
     test('unbekannte Übung wird zum Platzhalter statt zum Absturz', () {
-      final broken = const Library().merge(const Bundle(
-        routines: [
-          Routine(id: 'r', name: 'L', slots: [
-            ExerciseSlot(exerciseId: 'gibtsnicht', sets: [
-              SetSpec(target: RepsTarget(reps: 5)),
-            ]),
-          ]),
-        ],
-        programs: [
-          Program(id: 'p', name: 'P', phases: [
-            Phase(
-              id: 'ph',
-              name: 'Phase',
-              weeks: 1,
-              schedule: EveryDaySchedule(routineId: 'r', daysPerWeek: 1),
+      final broken = const Library().merge(
+        const Bundle(
+          routines: [
+            Routine(
+              id: 'r',
+              name: 'L',
+              slots: [
+                ExerciseSlot(
+                  exerciseId: 'gibtsnicht',
+                  sets: [SetSpec(target: RepsTarget(reps: 5))],
+                ),
+              ],
             ),
-          ]),
-        ],
-      ));
+          ],
+          programs: [
+            Program(
+              id: 'p',
+              name: 'P',
+              phases: [
+                Phase(
+                  id: 'ph',
+                  name: 'Phase',
+                  weeks: 1,
+                  schedule: EveryDaySchedule(routineId: 'r', daysPerWeek: 1),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
 
       final day = ProgramResolver(broken).resolveDay(broken.program('p')!, 0)!;
       expect(day.items.single.isMissing, isTrue);
@@ -190,18 +209,24 @@ void main() {
     });
 
     test('fehlende Liste macht den Tag sichtbar kaputt, nicht still leer', () {
-      final broken = const Library().merge(const Bundle(
-        programs: [
-          Program(id: 'p', name: 'P', phases: [
-            Phase(
-              id: 'ph',
-              name: 'Phase',
-              weeks: 1,
-              schedule: EveryDaySchedule(routineId: 'weg', daysPerWeek: 1),
+      final broken = const Library().merge(
+        const Bundle(
+          programs: [
+            Program(
+              id: 'p',
+              name: 'P',
+              phases: [
+                Phase(
+                  id: 'ph',
+                  name: 'Phase',
+                  weeks: 1,
+                  schedule: EveryDaySchedule(routineId: 'weg', daysPerWeek: 1),
+                ),
+              ],
             ),
-          ]),
-        ],
-      ));
+          ],
+        ),
+      );
 
       final day = ProgramResolver(broken).resolveDay(broken.program('p')!, 0)!;
       expect(day.label, contains('fehlt'));

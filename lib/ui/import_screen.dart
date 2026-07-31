@@ -82,7 +82,10 @@ class _ImportScreenState extends State<ImportScreen> {
                   controller: _controller,
                   minLines: 6,
                   maxLines: 14,
-                  style: const TextStyle(fontSize: 12.5, fontFamily: 'monospace'),
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontFamily: 'monospace',
+                  ),
                   decoration: InputDecoration(
                     hintText: '{ "version": 1, "exercises": [ ... ] }',
                     filled: true,
@@ -100,8 +103,9 @@ class _ImportScreenState extends State<ImportScreen> {
                         icon: const Icon(Icons.paste, size: 18),
                         label: const Text('Einfügen'),
                         onPressed: () async {
-                          final data =
-                              await Clipboard.getData(Clipboard.kTextPlain);
+                          final data = await Clipboard.getData(
+                            Clipboard.kTextPlain,
+                          );
                           if (data?.text != null) {
                             setState(() => _controller.text = data!.text!);
                           }
@@ -116,7 +120,9 @@ class _ImportScreenState extends State<ImportScreen> {
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Text('Importieren'),
                       ),
@@ -136,8 +142,9 @@ class _ImportScreenState extends State<ImportScreen> {
                     : scheme.errorContainer,
                 borderRadius: BorderRadius.zero,
                 border: Border.all(
-                  color: (result.ok ? scheme.primary : scheme.error)
-                      .withValues(alpha: 0.35),
+                  color: (result.ok ? scheme.primary : scheme.error).withValues(
+                    alpha: 0.35,
+                  ),
                 ),
               ),
               child: Column(
@@ -146,7 +153,9 @@ class _ImportScreenState extends State<ImportScreen> {
                   Row(
                     children: [
                       Icon(
-                        result.ok ? Icons.check_circle_outline : Icons.error_outline,
+                        result.ok
+                            ? Icons.check_circle_outline
+                            : Icons.error_outline,
                         size: 18,
                         color: result.ok
                             ? scheme.onPrimaryContainer
