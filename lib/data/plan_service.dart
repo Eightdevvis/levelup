@@ -3,20 +3,50 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../model/library.dart';
+import '../model/patch.dart';
 
-/// Fortschritt einer laufenden Plan-Erzeugung.
+/// Fortschritt eines laufenden Auftrags.
 ///
-/// Der Server reicht den Ereignisstrom von Anthropic unverändert durch, damit
-/// die App zeigen kann, woran gerade gearbeitet wird — eine Diagnose dauert
-/// Minuten, bevor das erste Zeichen Plan kommt.
+/// Der Server schickt ein eigenes, kleines Protokoll statt Anthropics
+/// Rohformat. Die App muss deshalb nicht wissen, wie ein `content_block_delta`
+/// aussieht — und ungültige Antworten fallen schon auf dem Server auf.
 sealed class PlanEvent {
   const PlanEvent();
 }
 
-/// Es wird nachgedacht. [text] ist die Zusammenfassung des Gedankengangs.
+/// Es wird nachgedacht. [text] ist der letzte Satz des Gedankengangs.
 class PlanThinking extends PlanEvent {
   const PlanThinking(this.text);
   final String text;
+}
+
+/// Im geteilten Pool wird nach vorhandenen Bausteinen gesucht.
+///
+/// Das sichtbar zu machen ist Absicht: der Nutzer soll sehen, dass nicht alles
+/// neu erfunden wird — und woran gerade gearbeitet wird, während nichts
+/// Lesbares entsteht.
+class PlanSearching extends PlanEvent {
+  const PlanSearching({
+    required this.tool,
+    required this.terms,
+    required this.hits,
+  });
+
+  final String tool;
+  final List<String> terms;
+  final int hits;
+
+  String describe() {
+    final was = switch (tool) {
+      'uebungen' => 'Übungen',
+      'plaene' => 'Pläne',
+      _ => 'Plan',
+    };
+    final wonach = terms.isEmpty ? '' : ' zu ${terms.join(", ")}';
+    return hits == 0
+        ? 'Nichts Vorhandenes$wonach — wird selbst gebaut.'
+        : '$hits $was$wonach gefunden.';
+  }
 }
 
 /// Der Plan wird geschrieben. [chars] ist die bisherige Länge.
@@ -25,9 +55,20 @@ class PlanWriting extends PlanEvent {
   final int chars;
 }
 
+/// Ein fertiger Plan.
 class PlanDone extends PlanEvent {
-  const PlanDone(this.bundle);
+  const PlanDone(this.bundle, {this.reused = const []});
+
   final Bundle bundle;
+
+  /// Was aus dem geteilten Pool übernommen wurde.
+  final List<String> reused;
+}
+
+/// Eine fertige Überarbeitung — Änderungen, kein neuer Plan.
+class PlanRevised extends PlanEvent {
+  const PlanRevised(this.patch);
+  final PlanPatch patch;
 }
 
 /// Was das Konto noch hergibt.
@@ -75,7 +116,7 @@ class PlanService {
   PlanService({required this.baseUrl, required this.token, http.Client? client})
     : _client = client ?? http.Client();
 
-  /// Wo die API läuft. Wird beim Ausrollen gesetzt.
+  /// Wo die API läuft.
   static const defaultBaseUrl = 'https://levelup-api.sevendevs.workers.dev';
 
   final String baseUrl;
@@ -125,149 +166,163 @@ class PlanService {
         )
         .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) {
-      throw PlanException(_message(response.body, response.statusCode));
+      throw PlanException(
+        _message(response.body, response.statusCode),
+        code: _code(response.body),
+      );
     }
     return Quota.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  Stream<PlanEvent> generatePlan(String request) async* {
+  Stream<PlanEvent> generatePlan(String request) {
     if (request.trim().isEmpty) {
-      throw const PlanException('Beschreib erst, worum es gehen soll.');
+      return Stream.error(
+        const PlanException('Beschreib erst, worum es gehen soll.'),
+      );
     }
+    return _stream('/v1/generate', {'request': request}, (done) {
+      final raw = done['bundle'];
+      if (raw is! Map<String, dynamic>) {
+        throw const PlanException('Es kam kein Plan zurück.');
+      }
+      return PlanDone(
+        _bundle(raw),
+        reused: [
+          for (final id in done['reused'] as List<dynamic>? ?? const [])
+            if (id is String) id,
+        ],
+      );
+    });
+  }
 
+  /// Bittet um Änderungen an einem bestehenden Plan.
+  ///
+  /// Zurück kommt kein neuer Plan, sondern ein Patch. Das ist der Punkt: was
+  /// nicht bemängelt wurde, bleibt Zeichen für Zeichen stehen.
+  Stream<PlanEvent> revisePlan(Bundle bundle, String feedback) {
+    if (feedback.trim().isEmpty) {
+      return Stream.error(const PlanException('Sag, was nicht passt.'));
+    }
+    return _stream(
+      '/v1/revise',
+      // Ohne den persönlichen Teil: er ist Ausgabe, nicht Eingabe, und würde
+      // die Überarbeitung nur auf sich selbst beziehen.
+      {'bundle': bundle.shareable.toJson(), 'feedback': feedback},
+      (done) {
+        final raw = done['patch'];
+        if (raw is! Map<String, dynamic>) {
+          throw const PlanException('Es kamen keine Änderungen zurück.');
+        }
+        return PlanRevised(PlanPatch.fromJson(raw));
+      },
+    );
+  }
+
+  /// Nimmt den Plan an: er wandert in die geteilte Bibliothek.
+  ///
+  /// Verschickt wird ausdrücklich die teilbare Fassung — der persönliche Teil
+  /// verlässt das Gerät nicht. Der Server entfernt ihn zwar ebenfalls, aber
+  /// worauf man sich verlässt, sollte man nicht erst verschicken.
+  Future<void> acceptPlan(Bundle bundle) async {
+    final response = await _client
+        .post(
+          Uri.parse('$baseUrl/v1/plans/accept'),
+          headers: {
+            'authorization': 'Bearer $token',
+            'content-type': 'application/json',
+          },
+          body: jsonEncode({'bundle': bundle.shareable.toJson()}),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode != 200) {
+      throw PlanException(
+        _message(response.body, response.statusCode),
+        code: _code(response.body),
+      );
+    }
+  }
+
+  /// Liest den Ereignisstrom eines Auftrags.
+  ///
+  /// Erzeugen und Überarbeiten unterscheiden sich nur darin, was am Ende
+  /// herauskommt — deshalb steckt der Unterschied in [onDone] und nicht in
+  /// zwei fast gleichen Schleifen.
+  Stream<PlanEvent> _stream(
+    String path,
+    Map<String, dynamic> body,
+    PlanEvent Function(Map<String, dynamic>) onDone,
+  ) async* {
     final http.StreamedResponse response;
     try {
-      final req = http.Request('POST', Uri.parse('$baseUrl/v1/generate'))
+      final request = http.Request('POST', Uri.parse('$baseUrl$path'))
         ..headers.addAll({
           'authorization': 'Bearer $token',
           'content-type': 'application/json',
         })
-        ..body = jsonEncode({'request': request});
-      response = await _client.send(req);
+        ..body = jsonEncode(body);
+      response = await _client.send(request);
     } on Exception catch (e) {
       throw PlanException('Kein Zugriff auf die LevelUp-API: $e');
     }
 
     if (response.statusCode != 200) {
-      final body = await response.stream.bytesToString();
+      final text = await response.stream.bytesToString();
       throw PlanException(
-        _message(body, response.statusCode),
-        code: _code(body),
+        _message(text, response.statusCode),
+        code: _code(text),
       );
     }
-
-    final json = StringBuffer();
-    String? stopReason;
-    var thinking = '';
 
     await for (final line in response.stream
         .transform(utf8.decoder)
         .transform(const LineSplitter())) {
       if (!line.startsWith('data: ')) continue;
-      final raw = line.substring(6);
-      if (raw == '[DONE]') break;
 
       final Map<String, dynamic> event;
       try {
-        event = jsonDecode(raw) as Map<String, dynamic>;
+        event = jsonDecode(line.substring(6)) as Map<String, dynamic>;
       } on FormatException {
         continue; // Herzschlag oder Bruchstück
       }
 
       switch (event['type']) {
-        case 'content_block_delta':
-          final delta = event['delta'] as Map<String, dynamic>?;
-          switch (delta?['type']) {
-            case 'text_delta':
-              json.write(delta!['text'] as String? ?? '');
-              yield PlanWriting(json.length);
-            case 'thinking_delta':
-              thinking += delta!['thinking'] as String? ?? '';
-              yield PlanThinking(_lastSentence(thinking));
-          }
-        case 'message_delta':
-          stopReason =
-              (event['delta'] as Map<String, dynamic>?)?['stop_reason']
-                  as String?;
+        case 'thinking':
+          yield PlanThinking(event['text'] as String? ?? '');
+        case 'writing':
+          yield PlanWriting((event['chars'] as num?)?.round() ?? 0);
+        case 'search':
+          yield PlanSearching(
+            tool: event['tool'] as String? ?? '',
+            terms: [
+              for (final t in event['terms'] as List<dynamic>? ?? const [])
+                if (t is String) t,
+            ],
+            hits: (event['hits'] as num?)?.round() ?? 0,
+          );
         case 'error':
           throw PlanException(
-            (event['error'] as Map<String, dynamic>?)?['message'] as String? ??
-                'Die API meldete einen Fehler.',
+            event['message'] as String? ?? 'Unbekannter Fehler.',
+            code: event['code'] as String?,
           );
+        case 'done':
+          yield onDone(event);
+          return;
       }
     }
 
-    // Vor dem Inhalt prüfen: bei einer Ablehnung ist die Antwort leer, und
-    // "ungültiges JSON" wäre die falsche Erklärung dafür.
-    if (stopReason == 'refusal') {
-      throw const PlanException(
-        'Die Anfrage wurde abgelehnt. Formulier sie anders oder wähle ein '
-        'anderes Thema.',
-      );
-    }
-    if (stopReason == 'max_tokens') {
-      throw const PlanException(
-        'Die Antwort war zu lang und wurde abgeschnitten. Bitte um einen '
-        'kürzeren Plan (weniger Wochen oder Phasen).',
-      );
-    }
-
-    final text = json.toString().trim();
-    if (text.isEmpty) {
-      throw const PlanException('Es kam kein Plan zurück.');
-    }
-
-    yield PlanDone(_parseBundle(text));
+    // Der Strom endete ohne Ergebnis — meist eine abgerissene Verbindung.
+    throw const PlanException('Die Verbindung brach ab. Bitte nochmal.');
   }
 
-  /// Trotz Anweisung kommt gelegentlich ein Code-Zaun oder ein einleitender
-  /// Satz mit. Statt daran zu scheitern: das JSON-Objekt herausschneiden.
-  static Bundle _parseBundle(String text) {
-    var body = text;
-    if (body.startsWith('```')) {
-      final firstBreak = body.indexOf('\n');
-      if (firstBreak != -1) body = body.substring(firstBreak + 1);
-      final closing = body.lastIndexOf('```');
-      if (closing != -1) body = body.substring(0, closing);
-    }
-    final start = body.indexOf('{');
-    final end = body.lastIndexOf('}');
-    if (start == -1 || end <= start) {
-      throw const PlanException('Die Antwort enthielt kein JSON-Objekt.');
-    }
-
-    final Bundle bundle;
+  static Bundle _bundle(Map<String, dynamic> raw) {
     try {
-      final decoded = jsonDecode(body.substring(start, end + 1));
-      if (decoded is! Map<String, dynamic>) {
-        throw const PlanException('Die Antwort war kein JSON-Objekt.');
-      }
-      bundle = Bundle.fromJson(decoded);
-    } on PlanException {
-      rethrow;
+      return Bundle.fromJson(raw);
     } on FormatException catch (e) {
-      throw PlanException('Ungültiges JSON: ${e.message}');
+      throw PlanException('Der Plan ließ sich nicht lesen: ${e.message}');
     } catch (e) {
       throw PlanException('Der Plan ließ sich nicht lesen: $e');
     }
-
-    // Der Server weist Themenfremdes mit einem leeren Bundle ab — das ist
-    // kein Formatfehler, sondern eine Ablehnung, und wird auch so gemeldet.
-    if (bundle.programs.isEmpty) {
-      throw const PlanException(
-        'Daraus ließ sich kein Übungsplan machen. Beschreib eine Fähigkeit, '
-        'die du üben willst.',
-      );
-    }
-    return bundle;
-  }
-
-  static String _lastSentence(String thinking) {
-    final trimmed = thinking.trimRight();
-    if (trimmed.isEmpty) return '';
-    final cut = trimmed.lastIndexOf(RegExp(r'[.!?]\s'));
-    final tail = cut == -1 ? trimmed : trimmed.substring(cut + 1);
-    return tail.trim();
   }
 
   static String? _code(String body) {

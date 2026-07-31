@@ -111,6 +111,7 @@ class Bundle {
     this.routines = const [],
     this.programs = const [],
     this.version = kBundleVersion,
+    this.personalNote,
   });
 
   final List<Exercise> exercises;
@@ -118,14 +119,34 @@ class Bundle {
   final List<Program> programs;
   final int version;
 
+  /// Was die AI dem Nutzer persönlich zum Plan gesagt hat.
+  ///
+  /// Der einzige Teil des Bundles, der nicht öffentlich ist: alles andere
+  /// wandert beim Annehmen in die geteilte Bibliothek und ist deshalb
+  /// allgemein formuliert. Hier steht, was nur diesen einen Menschen angeht —
+  /// und genau das wird vor dem Teilen entfernt.
+  final String? personalNote;
+
   bool get isEmpty => exercises.isEmpty && routines.isEmpty && programs.isEmpty;
 
   Map<String, dynamic> toJson() => {
     'version': version,
+    if (personalNote != null) 'personalNote': personalNote,
     'exercises': exercises.map((e) => e.toJson()).toList(),
     'routines': routines.map((e) => e.toJson()).toList(),
     'programs': programs.map((e) => e.toJson()).toList(),
   };
+
+  /// Dasselbe Bundle ohne den persönlichen Teil — die Fassung, die geteilt
+  /// werden darf.
+  Bundle get shareable => personalNote == null
+      ? this
+      : Bundle(
+          exercises: exercises,
+          routines: routines,
+          programs: programs,
+          version: version,
+        );
 
   static Bundle fromJson(Map<String, dynamic> json) {
     final version = (json['version'] as num?)?.round() ?? kBundleVersion;
@@ -135,8 +156,10 @@ class Bundle {
         '($kBundleVersion). Bitte App aktualisieren.',
       );
     }
+    final note = json['personalNote'];
     return Bundle(
       version: version,
+      personalNote: note is String && note.trim().isNotEmpty ? note.trim() : null,
       exercises: (json['exercises'] as List<dynamic>? ?? const [])
           .map((e) => Exercise.fromJson(e as Map<String, dynamic>))
           .toList(growable: false),

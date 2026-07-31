@@ -1,19 +1,20 @@
+import { run, UpstreamError, type AgentEvent, type Usage } from './agent';
 import { PLAN_SYSTEM_PROMPT } from './plan_prompt';
+import { REVISE_SYSTEM_PROMPT } from './revise_prompt';
+import { storeExercises, storeProgram } from './pool';
 
 /**
  * LevelUp-API.
  *
  * Steht zwischen App und Anthropic, damit der Schlüssel des Betreibers nie auf
- * ein fremdes Gerät gelangt. Sie hält drei Dinge fest, die die App nicht
- * bestimmen darf: den System-Prompt, die Antwortlänge und das Kontingent.
+ * ein fremdes Gerät gelangt. Sie hält vier Dinge fest, die die App nicht
+ * bestimmen darf: den System-Prompt, die Antwortlänge, das Kontingent und den
+ * geteilten Pool.
  *
- * Phase 1 kennt keine Anmeldung — ein Gerät registriert sich einmal und
- * bekommt ein Token. Der Platz für ein späteres Konto ist im Schema bereits
- * vorgesehen (`devices.user_id`).
+ * Es gibt keine Anmeldung — ein Gerät registriert sich einmal und bekommt ein
+ * Token. Der Platz für ein späteres Konto ist im Schema vorgesehen
+ * (`devices.user_id`).
  */
-
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-opus-5';
 
 // --- kleine Helfer ---------------------------------------------------------
 
@@ -80,14 +81,11 @@ async function authenticate(
   if (!header.startsWith('Bearer ')) return null;
   const tokenHash = await hashToken(header.slice(7).trim());
 
-  const device = await env.DB.prepare(
+  return await env.DB.prepare(
     'SELECT id, user_id FROM devices WHERE token_hash = ?',
   )
     .bind(tokenHash)
     .first<DeviceRow>();
-  if (device === null) return null;
-
-  return device;
 }
 
 interface Quota {
@@ -117,6 +115,21 @@ async function quotaFor(deviceId: string, env: Env): Promise<Quota> {
     today: row?.today ?? 0,
     dailyLimit: Number(env.DAILY_LIMIT),
   };
+}
+
+/** Gibt die Antwort zurück, wenn das Kontingent den Lauf verbietet. */
+async function quotaBlock(
+  deviceId: string,
+  env: Env,
+): Promise<Response | null> {
+  const quota = await quotaFor(deviceId, env);
+  if (quota.today >= quota.dailyLimit) {
+    return fail('Tageslimit erreicht. Morgen geht es weiter.', 429, 'daily_limit');
+  }
+  if (quota.used >= quota.free) {
+    return fail('Freikontingent aufgebraucht.', 402, 'quota_exhausted');
+  }
+  return null;
 }
 
 // --- Endpunkte -------------------------------------------------------------
@@ -160,14 +173,180 @@ async function me(device: DeviceRow, env: Env): Promise<Response> {
   });
 }
 
+// --- Erzeugen und Überarbeiten ---------------------------------------------
+
 /**
- * Erzeugt einen Plan und reicht den Ereignisstrom von Anthropic unverändert
- * an die App durch — dadurch bleibt die Fortschrittsanzeige erhalten und der
- * Worker muss die Antwort nie im Speicher halten.
+ * Schneidet das JSON-Objekt aus der Antwort.
  *
- * Der Verbrauch wird nebenher aus dem durchlaufenden Strom gelesen und nach
- * dessen Ende gebucht.
+ * Trotz Anweisung kommt gelegentlich ein Code-Zaun oder ein einleitender Satz
+ * mit. Daran zu scheitern wäre albern, wenn das Dokument daneben steht.
  */
+function extractJson(text: string): Record<string, unknown> | null {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end <= start) return null;
+  try {
+    const decoded = JSON.parse(text.slice(start, end + 1)) as unknown;
+    return typeof decoded === 'object' && decoded !== null
+      ? (decoded as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Öffnet den Ereignisstrom zur App und lässt den Lauf dahinter arbeiten.
+ *
+ * Die App bekommt ein eigenes, kleines Protokoll statt Anthropics Rohformat:
+ * `thinking`, `search`, `writing`, dann genau ein `done` oder `error`. Der
+ * fertige Plan wird als Ganzes geschickt, nicht häppchenweise — er muss hier
+ * ohnehin geprüft werden, bevor ihn ein Gerät sieht.
+ */
+function streamRun(
+  env: Env,
+  ctx: ExecutionContext,
+  generationId: string,
+  system: string,
+  message: unknown,
+  withTools: boolean,
+  finish: (document: Record<string, unknown>, reused: string[]) => unknown,
+): Response {
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+
+  // Die Schreibvorgänge müssen sich reihen — `emit` wird synchron aufgerufen,
+  // das Schreiben ist es nicht.
+  let queue = Promise.resolve();
+  const send = (payload: unknown): void => {
+    queue = queue
+      .then(() => writer.write(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`)))
+      .catch(() => {
+        // Gerät ist weg. Der Lauf darf trotzdem sauber zu Ende gehen, damit
+        // der Verbrauch gebucht wird.
+      });
+  };
+
+  ctx.waitUntil(
+    (async () => {
+      let usage: Usage | null = null;
+      let status = 'failed';
+      try {
+        const result = await run(
+          env,
+          system,
+          message,
+          (event: AgentEvent) => send(event),
+          withTools,
+        );
+        usage = result.usage;
+
+        if (result.stopReason === 'refusal') {
+          send({
+            type: 'error',
+            code: 'refused',
+            message: 'Die Anfrage wurde abgelehnt. Formulier sie anders.',
+          });
+        } else if (result.stopReason === 'max_tokens') {
+          send({
+            type: 'error',
+            code: 'too_long',
+            message:
+              'Die Antwort wurde abgeschnitten. Bitte um weniger — kürzere ' +
+              'Laufzeit oder weniger Phasen.',
+          });
+        } else {
+          const document = extractJson(result.text);
+          if (document === null) {
+            send({
+              type: 'error',
+              code: 'unreadable',
+              message: 'Die Antwort ließ sich nicht lesen. Bitte nochmal.',
+            });
+          } else {
+            const payload = finish(document, result.reused);
+            if (payload === null) {
+              send({
+                type: 'error',
+                code: 'not_a_plan',
+                message:
+                  'Daraus ließ sich kein Übungsplan machen. Beschreib eine ' +
+                  'Fähigkeit, die du üben willst.',
+              });
+            } else {
+              send(payload);
+              status = 'done';
+            }
+          }
+        }
+      } catch (error) {
+        logError('run', error);
+        send({
+          type: 'error',
+          code: error instanceof UpstreamError ? 'upstream' : 'internal',
+          message: 'Der Planer ist gerade nicht erreichbar. Bitte später nochmal.',
+        });
+      } finally {
+        await queue;
+        await writer.close().catch(() => undefined);
+        await record(env, generationId, usage, status);
+      }
+    })(),
+  );
+
+  return new Response(readable, {
+    headers: {
+      'content-type': 'text/event-stream',
+      'cache-control': 'no-cache',
+      ...CORS,
+    },
+  });
+}
+
+async function record(
+  env: Env,
+  generationId: string,
+  usage: Usage | null,
+  status: string,
+): Promise<void> {
+  try {
+    await env.DB.prepare(
+      `UPDATE generations
+         SET input_tokens = ?, output_tokens = ?, cache_read = ?,
+             cache_write = ?, status = ?, stop_reason = ?
+       WHERE id = ?`,
+    )
+      .bind(
+        usage?.input ?? 0,
+        usage?.output ?? 0,
+        usage?.cacheRead ?? 0,
+        usage?.cacheWrite ?? 0,
+        status,
+        usage?.stopReason ?? null,
+        generationId,
+      )
+      .run();
+  } catch (error) {
+    logError('record-usage', error);
+  }
+}
+
+async function openGeneration(
+  env: Env,
+  deviceId: string,
+  kind: string,
+): Promise<string> {
+  const id = `gen_${randomToken().slice(0, 24)}`;
+  await env.DB.prepare(
+    `INSERT INTO generations (id, device_id, created_at, kind)
+     VALUES (?, ?, ?, ?)`,
+  )
+    .bind(id, deviceId, Date.now(), kind)
+    .run();
+  return id;
+}
+
 async function generate(
   request: Request,
   env: Env,
@@ -193,195 +372,158 @@ async function generate(
     );
   }
 
-  const quota = await quotaFor(device.id, env);
-  if (quota.today >= quota.dailyLimit) {
-    return fail(
-      'Tageslimit erreicht. Morgen geht es weiter.',
-      429,
-      'daily_limit',
-    );
-  }
-  if (quota.used >= quota.free) {
-    return fail(
-      'Freikontingent aufgebraucht.',
-      402,
-      'quota_exhausted',
-    );
-  }
+  const blocked = await quotaBlock(device.id, env);
+  if (blocked !== null) return blocked;
 
-  const generationId = `gen_${randomToken().slice(0, 24)}`;
-  await env.DB.prepare(
-    `INSERT INTO generations (id, device_id, created_at) VALUES (?, ?, ?)`,
-  )
-    .bind(generationId, device.id, Date.now())
-    .run();
+  const generationId = await openGeneration(env, device.id, 'plan');
 
-  const upstream = await fetch(ANTHROPIC_URL, {
-    method: 'POST',
-    headers: {
-      'x-api-key': env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
+  return streamRun(
+    env,
+    ctx,
+    generationId,
+    PLAN_SYSTEM_PROMPT,
+    prompt,
+    true,
+    (document, reused) => {
+      const programs = document.programs;
+      // Ein leeres Bundle ist die Absage des Modells an Themenfremdes — kein
+      // Formatfehler, und es soll auch nicht als solcher gemeldet werden.
+      if (!Array.isArray(programs) || programs.length === 0) return null;
+      return { type: 'done', bundle: document, reused };
     },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: Number(env.MAX_OUTPUT_TOKENS),
-      stream: true,
-      thinking: { type: 'adaptive', display: 'summarized' },
-      // Der Prompt ist bei jedem Aufruf identisch — zwischengespeichert
-      // kostet die Eingabe ab dem zweiten Lauf ein Zehntel.
-      system: [
-        {
-          type: 'text',
-          text: PLAN_SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
-
-  if (!upstream.ok || upstream.body === null) {
-    ctx.waitUntil(
-      env.DB.prepare(`UPDATE generations SET status = 'failed' WHERE id = ?`)
-        .bind(generationId)
-        .run()
-        .then(() => undefined),
-    );
-    logError('anthropic', `status ${upstream.status}`);
-    return fail(
-      'Der Planer ist gerade nicht erreichbar. Bitte später nochmal.',
-      502,
-      'upstream',
-    );
-  }
-
-  // Verbrauch mitlesen, ohne den Strom aufzuhalten oder zu puffern.
-  const meter = new UsageMeter();
-  const metered = upstream.body.pipeThrough(meter.transform());
-
-  ctx.waitUntil(meter.finished.then((usage) => record(env, generationId, usage)));
-
-  return new Response(metered, {
-    headers: {
-      'content-type': 'text/event-stream',
-      'cache-control': 'no-cache',
-      ...CORS,
-    },
-  });
+  );
 }
 
-interface Usage {
-  input: number;
-  output: number;
-  cacheRead: number;
-  cacheWrite: number;
-  stopReason: string | null;
-}
+const MAX_BUNDLE_CHARS = 200_000;
 
-async function record(
+async function revise(
+  request: Request,
   env: Env,
-  generationId: string,
-  usage: Usage,
-): Promise<void> {
-  // Ein abgelehnter oder abgebrochener Lauf zählt nicht gegen das Kontingent,
-  // die Token sind aber trotzdem angefallen und werden festgehalten.
-  const status =
-    usage.stopReason === 'end_turn' || usage.stopReason === 'max_tokens'
-      ? 'done'
-      : 'failed';
-
+  ctx: ExecutionContext,
+  device: DeviceRow,
+): Promise<Response> {
+  let bundle: unknown = null;
+  let feedback = '';
   try {
-    await env.DB.prepare(
-      `UPDATE generations
-         SET input_tokens = ?, output_tokens = ?, cache_read = ?,
-             cache_write = ?, status = ?, stop_reason = ?
-       WHERE id = ?`,
-    )
-      .bind(
-        usage.input,
-        usage.output,
-        usage.cacheRead,
-        usage.cacheWrite,
-        status,
-        usage.stopReason,
-        generationId,
-      )
-      .run();
-  } catch (error) {
-    logError('record-usage', error);
+    const body = (await request.json()) as {
+      bundle?: unknown;
+      feedback?: unknown;
+    };
+    bundle = body.bundle ?? null;
+    if (typeof body.feedback === 'string') feedback = body.feedback.trim();
+  } catch {
+    return fail('Ungültiger Rumpf.', 400, 'bad_request');
   }
+
+  if (feedback.length === 0) {
+    return fail('Sag, was nicht passt.', 400, 'empty_request');
+  }
+  if (feedback.length > Number(env.MAX_REQUEST_CHARS)) {
+    return fail(
+      `Die Rückmeldung ist zu lang (max. ${env.MAX_REQUEST_CHARS} Zeichen).`,
+      400,
+      'request_too_long',
+    );
+  }
+  if (typeof bundle !== 'object' || bundle === null) {
+    return fail('Kein Plan mitgeschickt.', 400, 'missing_bundle');
+  }
+
+  // Der persönliche Teil geht nicht mit zurück — er ist Ausgabe, nicht
+  // Eingabe, und würde die Überarbeitung nur auf sich selbst beziehen.
+  const clean = { ...(bundle as Record<string, unknown>) };
+  delete clean.personalNote;
+
+  const planText = JSON.stringify(clean);
+  if (planText.length > MAX_BUNDLE_CHARS) {
+    return fail('Der Plan ist zu groß.', 400, 'bundle_too_large');
+  }
+
+  const blocked = await quotaBlock(device.id, env);
+  if (blocked !== null) return blocked;
+
+  const generationId = await openGeneration(env, device.id, 'revision');
+
+  const message = `DER PLAN:\n${planText}\n\nRÜCKMELDUNG:\n${feedback}`;
+
+  return streamRun(
+    env,
+    ctx,
+    generationId,
+    REVISE_SYSTEM_PROMPT,
+    message,
+    false,
+    (document) => {
+      const operations = document.operations;
+      if (!Array.isArray(operations)) return null;
+      return { type: 'done', patch: document };
+    },
+  );
+}
+
+// --- Annehmen ---------------------------------------------------------------
+
+/** Grobe Plausibilität, bevor etwas in die geteilte Bibliothek wandert. */
+function looksLikeExercise(raw: unknown): boolean {
+  if (typeof raw !== 'object' || raw === null) return false;
+  const ex = raw as Record<string, unknown>;
+  return (
+    typeof ex.id === 'string' &&
+    ex.id.length > 1 &&
+    ex.id.length < 120 &&
+    typeof ex.name === 'string' &&
+    ex.name.trim().length > 1 &&
+    ex.name.length < 200 &&
+    JSON.stringify(raw).length < 20_000
+  );
 }
 
 /**
- * Liest Verbrauchszahlen aus dem vorbeifließenden SSE-Strom.
+ * Ein Plan, den jemand behalten hat, geht in den Pool.
  *
- * Bewusst als Durchleitung statt als Sammlung: der Plan kann 15 kB groß sein
- * und muss die App sofort erreichen, nicht erst am Ende.
+ * Erst hier, nicht schon beim Erzeugen: was weggeworfen wurde, soll niemand
+ * als Vorlage bekommen. Der persönliche Teil bleibt auf dem Gerät.
  */
-class UsageMeter {
-  private buffer = '';
-  private usage: Usage = {
-    input: 0,
-    output: 0,
-    cacheRead: 0,
-    cacheWrite: 0,
-    stopReason: null,
-  };
-
-  private resolve!: (usage: Usage) => void;
-  readonly finished = new Promise<Usage>((r) => {
-    this.resolve = r;
-  });
-
-  transform(): TransformStream<Uint8Array, Uint8Array> {
-    const decoder = new TextDecoder();
-    return new TransformStream({
-      transform: (chunk, controller) => {
-        controller.enqueue(chunk); // zuerst weiterreichen, dann auswerten
-        this.buffer += decoder.decode(chunk, { stream: true });
-        const lines = this.buffer.split('\n');
-        this.buffer = lines.pop() ?? '';
-        for (const line of lines) this.read(line);
-      },
-      flush: () => {
-        this.read(this.buffer);
-        this.resolve(this.usage);
-      },
-    });
+async function accept(
+  request: Request,
+  env: Env,
+  device: DeviceRow,
+): Promise<Response> {
+  let bundle: Record<string, unknown>;
+  try {
+    const body = (await request.json()) as { bundle?: unknown };
+    if (typeof body.bundle !== 'object' || body.bundle === null) {
+      return fail('Kein Plan mitgeschickt.', 400, 'missing_bundle');
+    }
+    bundle = body.bundle as Record<string, unknown>;
+  } catch {
+    return fail('Ungültiger Rumpf.', 400, 'bad_request');
   }
 
-  private read(line: string): void {
-    if (!line.startsWith('data: ')) return;
-    let event: Record<string, unknown>;
-    try {
-      event = JSON.parse(line.slice(6)) as Record<string, unknown>;
-    } catch {
-      return; // Bruchstück oder Herzschlag
-    }
-
-    const message = event.message as Record<string, unknown> | undefined;
-    this.merge(event.usage ?? message?.usage);
-
-    const delta = event.delta as Record<string, unknown> | undefined;
-    if (typeof delta?.stop_reason === 'string') {
-      this.usage.stopReason = delta.stop_reason;
-    }
+  if (JSON.stringify(bundle).length > MAX_BUNDLE_CHARS) {
+    return fail('Der Plan ist zu groß.', 400, 'bundle_too_large');
   }
 
-  private merge(raw: unknown): void {
-    if (typeof raw !== 'object' || raw === null) return;
-    const u = raw as Record<string, unknown>;
-    const pick = (key: string, current: number): number =>
-      typeof u[key] === 'number' ? (u[key] as number) : current;
+  const programs = bundle.programs;
+  if (!Array.isArray(programs) || programs.length === 0) {
+    return fail('Der Plan enthält kein Programm.', 400, 'empty_bundle');
+  }
 
-    this.usage.input = pick('input_tokens', this.usage.input);
-    this.usage.output = pick('output_tokens', this.usage.output);
-    this.usage.cacheRead = pick('cache_read_input_tokens', this.usage.cacheRead);
-    this.usage.cacheWrite = pick(
-      'cache_creation_input_tokens',
-      this.usage.cacheWrite,
-    );
+  // Was in den Pool geht, ist ausdrücklich ohne den persönlichen Teil.
+  const shared = { ...bundle };
+  delete shared.personalNote;
+
+  const exercises = Array.isArray(shared.exercises)
+    ? shared.exercises.filter(looksLikeExercise)
+    : [];
+
+  try {
+    const stored = await storeExercises(env, exercises, device.id);
+    const ok = await storeProgram(env, shared, device.id);
+    return json({ ok, exercises: stored });
+  } catch (error) {
+    logError('accept', error);
+    return fail('Konnte nicht gespeichert werden.', 500, 'internal');
   }
 }
 
@@ -400,22 +542,30 @@ export default {
         return await registerDevice(request, env);
       }
 
-      const needsAuth =
-        url.pathname === '/v1/me' || url.pathname === '/v1/generate';
-      if (needsAuth) {
-        const device = await authenticate(request, env);
-        if (device === null) {
-          return fail('Nicht angemeldet.', 401, 'unauthenticated');
-        }
-
-        if (url.pathname === '/v1/me') return await me(device, env);
-        if (request.method !== 'POST') {
-          return fail('Nur POST.', 405, 'method_not_allowed');
-        }
-        return await generate(request, env, ctx, device);
+      const routes = ['/v1/me', '/v1/generate', '/v1/revise', '/v1/plans/accept'];
+      if (!routes.includes(url.pathname)) {
+        return fail('Unbekannter Endpunkt.', 404, 'not_found');
       }
 
-      return fail('Unbekannter Endpunkt.', 404, 'not_found');
+      const device = await authenticate(request, env);
+      if (device === null) {
+        return fail('Nicht angemeldet.', 401, 'unauthenticated');
+      }
+
+      if (url.pathname === '/v1/me') return await me(device, env);
+
+      if (request.method !== 'POST') {
+        return fail('Nur POST.', 405, 'method_not_allowed');
+      }
+
+      switch (url.pathname) {
+        case '/v1/generate':
+          return await generate(request, env, ctx, device);
+        case '/v1/revise':
+          return await revise(request, env, ctx, device);
+        default:
+          return await accept(request, env, device);
+      }
     } catch (error) {
       logError(url.pathname, error);
       return fail('Unerwarteter Fehler.', 500, 'internal');

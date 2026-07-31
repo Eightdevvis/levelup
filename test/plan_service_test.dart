@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -7,130 +6,103 @@ import 'package:http/testing.dart';
 import 'package:programs/data/plan_service.dart';
 import 'package:programs/model/library.dart';
 
-/// Ein kleines, aber vollständiges Bundle — genug, damit `Bundle.fromJson`
-/// etwas Echtes zu tun hat.
-const _bundleJson = '''
-{
-  "version": 1,
-  "exercises": [{
-    "id": "rhythmus-klopfen",
-    "name": "Rhythmus klopfen",
-    "domain": "geige",
-    "summary": "Takt ohne Instrument fühlen.",
-    "instructions": ["Metronom an", "Takt mitklopfen"],
-    "benefits": ["Sicherheit im Puls"],
-    "defaultSets": [{"target": {"kind": "duration", "seconds": 300}}]
-  }],
-  "routines": [{
-    "id": "tag-a",
-    "name": "Tag A",
-    "slots": [{
-      "exerciseId": "rhythmus-klopfen",
-      "sets": [{"target": {"kind": "duration", "seconds": 300}}]
-    }]
-  }],
-  "programs": [{
-    "id": "bach-lesen",
-    "name": "Bach lesen",
-    "description": "Notation vor Repertoire.",
-    "domain": "geige",
-    "rationale": "Das Problem ist die Notation, nicht die Technik.",
-    "phases": [{
-      "id": "grundlage",
-      "name": "Grundlage",
-      "weeks": 4,
-      "schedule": {"kind": "everyDay", "routineId": "tag-a", "daysPerWeek": 6}
-    }]
-  }]
-}
-''';
+/// Ein kleines, aber vollständiges Bundle.
+const _bundle = {
+  'version': 1,
+  'personalNote': 'Dein eigentliches Problem ist die Notation, nicht Bach.',
+  'exercises': [
+    {
+      'id': 'geige-rhythmus-klopfen',
+      'name': 'Rhythmus klopfen',
+      'domain': 'geige',
+      'summary': 'Takt ohne Instrument fühlen.',
+      'instructions': ['Metronom an', 'Takt mitklopfen'],
+      'benefits': ['Sicherheit im Puls'],
+      'defaultSets': [
+        {
+          'target': {'kind': 'duration', 'seconds': 300},
+        },
+      ],
+    },
+  ],
+  'routines': [
+    {
+      'id': 'tag-a',
+      'name': 'Tag A',
+      'slots': [
+        {
+          'exerciseId': 'geige-rhythmus-klopfen',
+          'sets': [
+            {
+              'target': {'kind': 'duration', 'seconds': 300},
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  'programs': [
+    {
+      'id': 'bach-lesen',
+      'name': 'Bach lesen',
+      'description': 'Notation vor Repertoire.',
+      'domain': 'geige',
+      'rationale': 'Wer Barock vom Blatt spielt, braucht die Taktstruktur.',
+      'phases': [
+        {
+          'id': 'grundlage',
+          'name': 'Grundlage',
+          'weeks': 4,
+          'schedule': {
+            'kind': 'everyDay',
+            'routineId': 'tag-a',
+            'daysPerWeek': 6,
+          },
+        },
+      ],
+    },
+  ],
+};
 
-/// Baut einen SSE-Strom, wie ihn der Worker durchreicht.
-String _sse({
-  required String text,
-  String? thinking,
-  String stopReason = 'end_turn',
-}) {
-  final lines = <String>[
-    'event: message_start',
-    'data: ${jsonEncode({
-      "type": "message_start",
-      "message": {"id": "msg_1"},
-    })}',
-    '',
-  ];
+/// Der Server schickt sein eigenes Protokoll — kein Anthropic-Rohformat mehr.
+String _sse(List<Map<String, dynamic>> events) =>
+    events.map((e) => 'data: ${jsonEncode(e)}\n').join('\n');
 
-  if (thinking != null) {
-    lines.addAll([
-      'data: ${jsonEncode({
-        "type": "content_block_delta",
-        "index": 0,
-        "delta": {"type": "thinking_delta", "thinking": thinking},
-      })}',
-      '',
-    ]);
-  }
+PlanService _service(
+  String body, {
+  int status = 200,
+  void Function(String path, Map<String, dynamic> body)? onRequest,
+}) => PlanService(
+  baseUrl: 'https://api.test',
+  token: 'tok_test',
+  client: MockClient.streaming((request, bodyStream) async {
+    expect(request.headers['authorization'], 'Bearer tok_test');
+    if (onRequest != null) {
+      final raw = await bodyStream.bytesToString();
+      onRequest(request.url.path, jsonDecode(raw) as Map<String, dynamic>);
+    }
+    return http.StreamedResponse(
+      Stream.value(utf8.encode(body)),
+      status,
+      request: request,
+    );
+  }),
+);
 
-  // Bewusst in Häppchen, damit das Zusammensetzen mitgetestet wird.
-  for (var i = 0; i < text.length; i += 64) {
-    final chunk = text.substring(i, (i + 64).clamp(0, text.length));
-    lines.addAll([
-      'data: ${jsonEncode({
-        "type": "content_block_delta",
-        "index": 0,
-        "delta": {"type": "text_delta", "text": chunk},
-      })}',
-      '',
-    ]);
-  }
-
-  lines.addAll([
-    'data: ${jsonEncode({
-      "type": "message_delta",
-      "delta": {"stop_reason": stopReason},
-      "usage": {"output_tokens": 1200},
-    })}',
-    '',
-    'data: [DONE]',
-    '',
-  ]);
-  return lines.join('\n');
-}
-
-/// Antwortet auf `/v1/generate` mit einem Strom, auf alles andere mit 404.
-MockClient _streaming(String body, {int status = 200}) =>
-    MockClient.streaming((request, _) async {
-      expect(request.headers['authorization'], 'Bearer tok_test');
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(body)),
-        status,
-        request: request,
-        headers: {'content-type': 'text/event-stream'},
-      );
-    });
-
-Future<Bundle> _run(PlanService service, [String request = 'Bach lesen']) async {
-  final events = await service.generatePlan(request).toList();
-  return (events.last as PlanDone).bundle;
-}
+Future<List<PlanEvent>> _events(Stream<PlanEvent> stream) => stream.toList();
 
 void main() {
   group('register', () {
-    test('liefert das Token und merkt sich die Plattform', () async {
-      String? sentPlatform;
+    test('liefert das Token und meldet die Plattform', () async {
+      String? platform;
       final client = MockClient((request) async {
         expect(request.url.path, '/v1/devices');
-        sentPlatform =
+        platform =
             (jsonDecode(request.body) as Map<String, dynamic>)['platform']
                 as String?;
         return http.Response(
-          jsonEncode({
-            'deviceId': 'dev_1',
-            'token': 'tok_neu',
-            'freeGenerations': 3,
-          }),
+          jsonEncode({'deviceId': 'dev_1', 'token': 'tok_neu'}),
           200,
-          headers: {'content-type': 'application/json'},
         );
       });
 
@@ -141,10 +113,10 @@ void main() {
       );
 
       expect(token, 'tok_neu');
-      expect(sentPlatform, 'android');
+      expect(platform, 'android');
     });
 
-    test('meldet einen Serverfehler in Klartext', () async {
+    test('meldet einen Serverfehler in Klartext', () {
       final client = MockClient(
         (_) async => http.Response(
           jsonEncode({
@@ -174,7 +146,7 @@ void main() {
   group('quota', () {
     test('liest den Zählerstand', () async {
       final client = MockClient(
-        (request) async => http.Response(
+        (_) async => http.Response(
           jsonEncode({'remaining': 2, 'dailyRemaining': 9, 'used': 1}),
           200,
         ),
@@ -191,8 +163,7 @@ void main() {
       expect(quota.exhausted, isFalse);
     });
 
-    test('ein unbekanntes Gerät ist erklärbar, nicht nur ein Statuscode',
-        () async {
+    test('ein unbekanntes Gerät ist erklärbar, nicht nur ein Statuscode', () {
       final client = MockClient((_) async => http.Response('nope', 401));
       expect(
         () => PlanService(
@@ -212,163 +183,123 @@ void main() {
   });
 
   group('generatePlan', () {
-    test('setzt den Strom zu einem Bundle zusammen', () async {
-      final service = PlanService(
-        baseUrl: 'https://api.test',
-        token: 'tok_test',
-        client: _streaming(
-          _sse(text: _bundleJson, thinking: 'Erst die Notation. Dann Bach.'),
-        ),
-      );
-
-      final events = await service.generatePlan('Bach lesen').toList();
-
-      expect(events.whereType<PlanThinking>(), isNotEmpty);
-      expect(events.whereType<PlanWriting>(), isNotEmpty);
-
-      final bundle = (events.last as PlanDone).bundle;
-      expect(bundle.programs.single.id, 'bach-lesen');
-      expect(bundle.exercises.single.name, 'Rhythmus klopfen');
-      expect(bundle.routines.single.slots.single.exerciseId, 'rhythmus-klopfen');
-    });
-
-    test('meldet den letzten Gedanken, nicht den ganzen Gedankengang',
-        () async {
-      final service = PlanService(
-        baseUrl: 'https://api.test',
-        token: 'tok_test',
-        client: _streaming(
-          _sse(
-            text: _bundleJson,
-            thinking: 'Zuerst prüfe ich das Ziel. Die Notation ist die Lücke.',
-          ),
-        ),
-      );
-
-      final events = await service.generatePlan('Bach lesen').toList();
-      final thoughts = events.whereType<PlanThinking>().toList();
-
-      expect(thoughts.last.text, 'Die Notation ist die Lücke.');
-    });
-
-    test('schneidet einen Code-Zaun heraus', () async {
-      final service = PlanService(
-        baseUrl: 'https://api.test',
-        token: 'tok_test',
-        client: _streaming(_sse(text: '```json\n$_bundleJson\n```')),
-      );
-
-      expect((await _run(service)).programs.single.id, 'bach-lesen');
-    });
-
-    test('eine Ablehnung ist eine Ablehnung, kein Formatfehler', () async {
-      final service = PlanService(
-        baseUrl: 'https://api.test',
-        token: 'tok_test',
-        client: _streaming(_sse(text: '', stopReason: 'refusal')),
-      );
-
-      expect(
-        () => _run(service),
-        throwsA(
-          isA<PlanException>().having(
-            (e) => e.message,
-            'message',
-            contains('abgelehnt'),
-          ),
-        ),
-      );
-    });
-
-    test('abgeschnittene Antworten sagen, was zu tun ist', () async {
-      final service = PlanService(
-        baseUrl: 'https://api.test',
-        token: 'tok_test',
-        client: _streaming(
-          _sse(text: '{"version":1,"programs":[', stopReason: 'max_tokens'),
-        ),
-      );
-
-      expect(
-        () => _run(service),
-        throwsA(
-          isA<PlanException>().having(
-            (e) => e.message,
-            'message',
-            contains('kürzeren Plan'),
-          ),
-        ),
-      );
-    });
-
-    test('ein leeres Bundle ist die Absage des Servers an Themenfremdes',
-        () async {
-      final service = PlanService(
-        baseUrl: 'https://api.test',
-        token: 'tok_test',
-        client: _streaming(
-          _sse(
-            text: '{"version":1,"exercises":[],"routines":[],"programs":[]}',
-          ),
-        ),
-      );
-
-      expect(
-        () => _run(service),
-        throwsA(
-          isA<PlanException>().having(
-            (e) => e.message,
-            'message',
-            contains('Beschreib eine Fähigkeit'),
-          ),
-        ),
-      );
-    });
-
-    test('aufgebrauchtes Kontingent ist am Code erkennbar', () async {
-      final service = PlanService(
-        baseUrl: 'https://api.test',
-        token: 'tok_test',
-        client: _streaming(
-          jsonEncode({
-            'error': {
-              'message': 'Dein Freikontingent ist aufgebraucht.',
-              'code': 'quota_exhausted',
+    test('meldet Denken, Suchen, Schreiben und liefert den Plan', () async {
+      final events = await _events(
+        _service(
+          _sse([
+            {'type': 'thinking', 'text': 'Die Notation ist die Lücke.'},
+            {
+              'type': 'search',
+              'tool': 'uebungen',
+              'terms': ['notation'],
+              'hits': 3,
             },
-          }),
-          status: 402,
-        ),
+            {'type': 'writing', 'chars': 400},
+            {
+              'type': 'done',
+              'bundle': _bundle,
+              'reused': ['geige-rhythmus-klopfen'],
+            },
+          ]),
+        ).generatePlan('Bach lesen'),
+      );
+
+      expect(events.whereType<PlanThinking>().single.text,
+          'Die Notation ist die Lücke.');
+      expect(events.whereType<PlanWriting>().single.chars, 400);
+
+      final suche = events.whereType<PlanSearching>().single;
+      expect(suche.hits, 3);
+      expect(suche.describe(), contains('3'));
+
+      final done = events.whereType<PlanDone>().single;
+      expect(done.bundle.programs.single.id, 'bach-lesen');
+      expect(done.reused, ['geige-rhythmus-klopfen']);
+      expect(
+        done.bundle.personalNote,
+        'Dein eigentliches Problem ist die Notation, nicht Bach.',
+      );
+    });
+
+    test('eine Suche ohne Treffer wird auch so gesagt', () async {
+      final events = await _events(
+        _service(
+          _sse([
+            {
+              'type': 'search',
+              'tool': 'plaene',
+              'terms': ['zehnfinger'],
+              'hits': 0,
+            },
+            {'type': 'done', 'bundle': _bundle},
+          ]),
+        ).generatePlan('irgendwas'),
       );
 
       expect(
-        () => _run(service),
+        events.whereType<PlanSearching>().single.describe(),
+        contains('selbst gebaut'),
+      );
+    });
+
+    test('ein Fehlerereignis wird zur Ausnahme mit Code', () {
+      expect(
+        () => _events(
+          _service(
+            _sse([
+              {
+                'type': 'error',
+                'code': 'not_a_plan',
+                'message': 'Daraus wird kein Übungsplan.',
+              },
+            ]),
+          ).generatePlan('schreib mir ein Gedicht'),
+        ),
         throwsA(
           isA<PlanException>()
-              .having((e) => e.quotaExhausted, 'quotaExhausted', isTrue)
-              .having((e) => e.message, 'message', contains('aufgebraucht')),
+              .having((e) => e.code, 'code', 'not_a_plan')
+              .having((e) => e.message, 'message', contains('kein Übungsplan')),
         ),
       );
     });
 
-    test('das Tageslimit zählt auch als aufgebraucht', () async {
-      final service = PlanService(
-        baseUrl: 'https://api.test',
-        token: 'tok_test',
-        client: _streaming(
-          jsonEncode({
-            'error': {'message': 'Genug für heute.', 'code': 'daily_limit'},
-          }),
-          status: 429,
-        ),
-      );
-
+    test('aufgebrauchtes Kontingent ist am Code erkennbar', () {
       expect(
-        () => _run(service),
+        () => _events(
+          _service(
+            jsonEncode({
+              'error': {
+                'message': 'Freikontingent aufgebraucht.',
+                'code': 'quota_exhausted',
+              },
+            }),
+            status: 402,
+          ).generatePlan('Bach lesen'),
+        ),
         throwsA(
           isA<PlanException>().having(
             (e) => e.quotaExhausted,
             'quotaExhausted',
             isTrue,
+          ),
+        ),
+      );
+    });
+
+    test('ein Strom ohne Ergebnis ist ein Abriss, kein stiller Erfolg', () {
+      expect(
+        () => _events(
+          _service(
+            _sse([
+              {'type': 'thinking', 'text': 'Ich überlege...'},
+            ]),
+          ).generatePlan('Bach lesen'),
+        ),
+        throwsA(
+          isA<PlanException>().having(
+            (e) => e.message,
+            'message',
+            contains('brach ab'),
           ),
         ),
       );
@@ -393,15 +324,128 @@ void main() {
     });
 
     test('Bruchstücke im Strom kippen den Lauf nicht', () async {
-      final withNoise = _sse(text: _bundleJson)
-          .replaceFirst('\n\n', '\n: keep-alive\ndata: {kaputt\n\n');
+      final noisy =
+          'data: {kaputt\n\n: herzschlag\n\n'
+          '${_sse([
+            {'type': 'done', 'bundle': _bundle},
+          ])}';
+
+      final events = await _events(_service(noisy).generatePlan('Bach lesen'));
+      expect(events.whereType<PlanDone>().single.bundle.programs, hasLength(1));
+    });
+  });
+
+  group('revisePlan', () {
+    test('liefert Änderungen statt eines neuen Plans', () async {
+      final events = await _events(
+        _service(
+          _sse([
+            {
+              'type': 'done',
+              'patch': {
+                'personalNote': 'Die Fingerübung ist raus.',
+                'operations': [
+                  {
+                    'op': 'removeExercise',
+                    'exerciseId': 'geige-rhythmus-klopfen',
+                  },
+                ],
+              },
+            },
+          ]),
+        ).revisePlan(Bundle.fromJson(Map.from(_bundle)), 'zu viel'),
+      );
+
+      final patch = events.whereType<PlanRevised>().single.patch;
+      expect(patch.operations, hasLength(1));
+      expect(patch.personalNote, 'Die Fingerübung ist raus.');
+    });
+
+    test('der persönliche Teil wird nicht mitgeschickt', () async {
+      Map<String, dynamic>? sent;
+      await _events(
+        _service(
+          _sse([
+            {
+              'type': 'done',
+              'patch': {'operations': []},
+            },
+          ]),
+          onRequest: (path, body) {
+            expect(path, '/v1/revise');
+            sent = body;
+          },
+        ).revisePlan(Bundle.fromJson(Map.from(_bundle)), 'zu viel'),
+      );
+
+      final bundle = sent?['bundle'] as Map<String, dynamic>?;
+      expect(bundle, isNotNull);
+      expect(bundle!.containsKey('personalNote'), isFalse);
+      expect(sent?['feedback'], 'zu viel');
+    });
+
+    test('ohne Rückmeldung wird nichts verschickt', () async {
+      var called = false;
       final service = PlanService(
         baseUrl: 'https://api.test',
         token: 'tok_test',
-        client: _streaming(withNoise),
+        client: MockClient.streaming((request, _) async {
+          called = true;
+          return http.StreamedResponse(const Stream.empty(), 200);
+        }),
       );
 
-      expect((await _run(service)).programs.single.id, 'bach-lesen');
+      await expectLater(
+        service.revisePlan(Bundle.fromJson(Map.from(_bundle)), '  ').toList(),
+        throwsA(isA<PlanException>()),
+      );
+      expect(called, isFalse);
+    });
+  });
+
+  group('acceptPlan', () {
+    test('schickt die teilbare Fassung, ohne den persönlichen Teil', () async {
+      Map<String, dynamic>? sent;
+      final client = MockClient((request) async {
+        expect(request.url.path, '/v1/plans/accept');
+        sent = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(jsonEncode({'ok': true, 'exercises': 1}), 200);
+      });
+
+      await PlanService(
+        baseUrl: 'https://api.test',
+        token: 'tok_test',
+        client: client,
+      ).acceptPlan(Bundle.fromJson(Map.from(_bundle)));
+
+      final bundle = sent?['bundle'] as Map<String, dynamic>?;
+      expect(bundle, isNotNull);
+      // Der persönliche Teil verlässt das Gerät nicht. Der Server entfernt ihn
+      // ebenfalls — aber worauf man sich verlässt, verschickt man nicht erst.
+      expect(bundle!.containsKey('personalNote'), isFalse);
+      expect((bundle['programs'] as List<dynamic>).single, isNotNull);
+    });
+
+    test('ein Fehler beim Teilen ist ein Fehler', () {
+      final client = MockClient(
+        (_) async => http.Response(
+          jsonEncode({
+            'error': {'message': 'Zu groß.', 'code': 'bundle_too_large'},
+          }),
+          400,
+        ),
+      );
+
+      expect(
+        () => PlanService(
+          baseUrl: 'https://api.test',
+          token: 'tok_test',
+          client: client,
+        ).acceptPlan(Bundle.fromJson(Map.from(_bundle))),
+        throwsA(
+          isA<PlanException>().having((e) => e.code, 'code', 'bundle_too_large'),
+        ),
+      );
     });
   });
 }
