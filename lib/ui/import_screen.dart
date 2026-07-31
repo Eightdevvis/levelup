@@ -53,9 +53,11 @@ class _ImportScreenState extends State<ImportScreen> {
             step: 0,
             title: 'Claude direkt fragen',
             body:
-                'Beschreib dein Anliegen, und die App holt den Plan selbst. '
-                'Braucht einen eigenen API-Schlüssel und kostet pro Plan ein '
-                'paar Cent. Ohne Schlüssel nimm die beiden Schritte darunter.',
+                'Beschreib dein Anliegen, und die App holt den Plan selbst — '
+                'ohne Anmeldung, ohne Schlüssel. Die ersten Pläne sind frei; '
+                'wie viele noch offen sind, steht dort oben. Ist das '
+                'Kontingent aufgebraucht, führen die beiden Schritte darunter '
+                'ans selbe Ziel.',
             action: FilledButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(builder: (_) => const GenerateScreen()),

@@ -74,12 +74,13 @@ class AppSnapshot {
 
   final List<SessionLog> sessions;
 
-  /// Kleinkram, der nicht zur Bibliothek gehört — derzeit der API-Schlüssel.
+  /// Kleinkram, der nicht zur Bibliothek gehört — derzeit das Gerätetoken.
   ///
-  /// Liegt im selben Klartext-Speicher wie alles andere. Für eine App, die
-  /// einem einzelnen Menschen gehört, ist das vertretbar; auf Android liegt
-  /// die Datei im privaten App-Verzeichnis. Wer den Schlüssel härter schützen
-  /// will, müsste ihn in den Schlüsselbund des Systems auslagern.
+  /// Liegt im selben Klartext-Speicher wie alles andere, auf Android im
+  /// privaten App-Verzeichnis. Das Token weist nur dieses eine Gerät aus und
+  /// hängt an einem Kontingent, nicht an einem Zahlungsmittel; wer es
+  /// abgreift, kann höchstens die freien Pläne aufbrauchen. Sobald daran
+  /// echtes Guthaben hängt, gehört es in den Schlüsselbund des Systems.
   final Map<String, String> settings;
 
   AppSnapshot copyWith({
