@@ -113,12 +113,37 @@ void main() {
     expect(find.text('GEIGE'), findsWidgets);
   });
 
-  testWidgets('Importbildschirm ist erreichbar', (tester) async {
+  testWidgets('Importbildschirm bietet beide Wege an', (tester) async {
     await _pumpApp(tester);
 
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
 
-    expect(find.text('Prompt in Zwischenablage'), findsOneWidget);
+    // Kastentitel stecken in RichText-Spans, deshalb über das Prädikat.
+    Finder kasten(String titel) => find.byWidgetPredicate(
+      (w) => w is RichText && w.text.toPlainText().contains(titel),
+    );
+
+    expect(kasten('PLAN ERSTELLEN (PRO)'), findsOneWidget);
+    expect(kasten('PLAN ERSTELLEN (FREE)'), findsOneWidget);
+  });
+
+  testWidgets('die Schritte des freien Weges liegen eingeklappt', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    // Eingeklappt, damit der Bildschirm zwei Angebote zeigt und nicht eine
+    // Liste loser Aufgaben.
+    expect(find.text('PROMPT IN ZWISCHENABLAGE'), findsNothing);
+
+    await tester.tap(find.text('SCHRITTE ANZEIGEN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PROMPT IN ZWISCHENABLAGE'), findsOneWidget);
+    expect(find.text('IMPORTIEREN'), findsOneWidget);
   });
 }

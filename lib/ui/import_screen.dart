@@ -6,10 +6,18 @@ import '../main.dart';
 import '../state/app_state.dart';
 import 'generate_screen.dart';
 import 'program_screen.dart';
+import 'theme.dart';
 import 'widgets.dart';
 
-/// Der Weg von "ich hab ein Problem" zu "es steht als Plan in der App":
-/// Prompt kopieren, in Claude einwerfen, Antwort hier einfügen.
+/// Die beiden Wege zu einem Plan.
+///
+/// Oben der bequeme: beschreiben, fertig. Darunter der kostenlose: Prompt
+/// kopieren, in ein LLM werfen, Antwort einfügen. Beide führen zum selben
+/// Ergebnis, der zweite kostet nur Handgriffe statt Geld.
+///
+/// Die Schritte des zweiten Weges liegen eingeklappt. Ausgebreitet standen sie
+/// gleichrangig neben dem ersten Weg und ließen den Bildschirm wie eine Liste
+/// loser Aufgaben aussehen, statt wie zwei Angebote.
 class ImportScreen extends StatefulWidget {
   const ImportScreen({super.key});
 
@@ -21,6 +29,7 @@ class _ImportScreenState extends State<ImportScreen> {
   final _controller = TextEditingController();
   ImportResult? _result;
   bool _busy = false;
+  bool _stepsOpen = false;
 
   @override
   void dispose() {
@@ -41,112 +50,146 @@ class _ImportScreenState extends State<ImportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppTheme.paletteOf(context);
     final scheme = Theme.of(context).colorScheme;
     final result = _result;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Plan importieren')),
+      appBar: AppBar(title: const Text('PLAN HOLEN')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
+        padding: const EdgeInsets.fromLTRB(15, 8, 15, 40),
         children: [
-          _StepCard(
-            step: 0,
-            title: 'Claude direkt fragen',
-            body:
-                'Beschreib dein Anliegen, und die App holt den Plan selbst — '
-                'ohne Anmeldung, ohne Schlüssel. Die ersten Pläne sind frei; '
-                'wie viele noch offen sind, steht dort oben. Ist das '
-                'Kontingent aufgebraucht, führen die beiden Schritte darunter '
-                'ans selbe Ziel.',
-            action: FilledButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const GenerateScreen()),
-              ),
-              child: const Text('PLAN ERZEUGEN'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _StepCard(
-            step: 1,
-            title: 'Prompt kopieren',
-            body:
-                'Enthält das komplette Format. In Claude einfügen und dahinter '
-                'in eigenen Worten beschreiben, was du erreichen willst und wo '
-                'es klemmt — je genauer das Problem, desto besser die Diagnose.',
-            action: OutlinedButton.icon(
-              icon: const Icon(Icons.copy_all_outlined, size: 18),
-              label: const Text('Prompt in Zwischenablage'),
-              onPressed: () async {
-                await Clipboard.setData(
-                  const ClipboardData(text: kAiPromptTemplate),
-                );
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Prompt kopiert.')),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
-          _StepCard(
-            step: 2,
-            title: 'Antwort hier einfügen',
-            body:
-                'Das JSON aus der Antwort einfügen. Code-Zäune (```) dürfen '
-                'drinbleiben, die werden entfernt.',
-            action: Column(
+          ZBox(
+            title: 'plan erstellen (pro)',
+            filled: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: _controller,
-                  minLines: 6,
-                  maxLines: 14,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontFamily: 'monospace',
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '{ "version": 1, "exercises": [ ... ] }',
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                      borderSide: BorderSide.none,
+                _body(
+                  p,
+                  'Beschreib dein Anliegen und lass dir direkt in der App '
+                  'einen eigenen Plan zusammenstellen. Braucht ein Abo — oder '
+                  'probier die kostenlose Variante darunter.',
+                ),
+                const SizedBox(height: 14),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const GenerateScreen(),
                     ),
                   ),
+                  child: const Text('PLAN ERZEUGEN'),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.paste, size: 18),
-                        label: const Text('Einfügen'),
-                        onPressed: () async {
-                          final data = await Clipboard.getData(
-                            Clipboard.kTextPlain,
-                          );
-                          if (data?.text != null) {
-                            setState(() => _controller.text = data!.text!);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: _busy ? null : _import,
-                        child: _busy
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('Importieren'),
-                      ),
-                    ),
-                  ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          ZBox(
+            title: 'plan erstellen (free)',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _body(
+                  p,
+                  'Befolge ein paar Schritte und importier damit einen guten '
+                  'Plan in deine Bibliothek.',
                 ),
+                const SizedBox(height: 14),
+                OutlinedButton(
+                  onPressed: () => setState(() => _stepsOpen = !_stepsOpen),
+                  child: Text(
+                    _stepsOpen ? 'SCHRITTE AUSBLENDEN' : 'SCHRITTE ANZEIGEN',
+                  ),
+                ),
+                if (_stepsOpen) ...[
+                  const SizedBox(height: 20),
+                  _Step(
+                    number: 1,
+                    title: 'Prompt kopieren',
+                    body:
+                        'Enthält das komplette Format. In ein LLM einfügen '
+                        '(unsere Empfehlung und die Pro-Variante basieren auf '
+                        'Claude von Anthropic) und dahinter in eigenen Worten '
+                        'beschreiben, was du erreichen willst und wo es '
+                        'klemmt — je genauer das Problem, desto besser die '
+                        'Diagnose.',
+                    action: OutlinedButton.icon(
+                      icon: const Icon(Icons.copy_all_outlined, size: 18),
+                      label: const Text('PROMPT IN ZWISCHENABLAGE'),
+                      onPressed: () async {
+                        await Clipboard.setData(
+                          const ClipboardData(text: kAiPromptTemplate),
+                        );
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('// PROMPT KOPIERT')),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _Step(
+                    number: 2,
+                    title: 'Antwort hier einfügen',
+                    body:
+                        'Das JSON aus der Antwort einfügen. Code-Zäune (```) '
+                        'dürfen drinbleiben, die werden entfernt.',
+                    action: Column(
+                      children: [
+                        TextField(
+                          controller: _controller,
+                          minLines: 6,
+                          maxLines: 14,
+                          style: TextStyle(
+                            fontFamily: Metrics.mono,
+                            fontSize: 11.5,
+                            height: 1.5,
+                            color: p.fg,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: '{ "version": 1, "exercises": [ ... ] }',
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.paste, size: 18),
+                                label: const Text('EINFÜGEN'),
+                                onPressed: () async {
+                                  final data = await Clipboard.getData(
+                                    Clipboard.kTextPlain,
+                                  );
+                                  if (data?.text != null) {
+                                    setState(
+                                      () => _controller.text = data!.text!,
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: FilledButton(
+                                onPressed: _busy ? null : _import,
+                                child: _busy
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Text('IMPORTIEREN'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -242,90 +285,103 @@ class _ImportScreenState extends State<ImportScreen> {
               ),
             ),
           ],
-          SectionLabel('Format'),
+          const SectionLabel('format'),
           Text(
             'Importiert wird ein Bundle aus Übungen, Listen und Programmen. '
             'Übungen landen in der gemeinsamen Bibliothek und stehen danach '
             'jedem weiteren Plan zur Verfügung. Gleiche IDs werden ersetzt, '
             'ein erneuter Import aktualisiert also, statt zu doppeln.',
             style: TextStyle(
-              fontSize: 13,
-              height: 1.5,
-              color: scheme.onSurface.withValues(alpha: 0.65),
+              fontFamily: Metrics.mono,
+              fontSize: 10.5,
+              height: 1.65,
+              color: p.fgFaint,
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _body(Palette p, String text) => Text(
+    text,
+    style: TextStyle(
+      fontFamily: Metrics.mono,
+      fontSize: 11,
+      height: 1.7,
+      color: p.fgDim,
+    ),
+  );
 }
 
-class _StepCard extends StatelessWidget {
-  const _StepCard({
-    required this.step,
+/// Ein nummerierter Schritt innerhalb des kostenlosen Weges.
+class _Step extends StatelessWidget {
+  const _Step({
+    required this.number,
     required this.title,
     required this.body,
     required this.action,
   });
 
-  final int step;
+  final int number;
   final String title;
   final String body;
   final Widget action;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = AppTheme.paletteOf(context);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 24,
-                  height: 24,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: scheme.primary.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.zero,
-                  ),
-                  child: Text(
-                    '$step',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.primary,
-                    ),
-                  ),
+            Container(
+              width: 20,
+              height: 20,
+              alignment: Alignment.center,
+              color: p.fg,
+              child: Text(
+                '$number',
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: p.bg,
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              body,
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.5,
-                color: scheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
-            const SizedBox(height: 14),
-            action,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title.toUpperCase(),
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: Metrics.trackWider,
+                  height: 1.5,
+                  color: p.fg,
+                ),
+              ),
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 9),
+        Text(
+          body,
+          style: TextStyle(
+            fontFamily: Metrics.mono,
+            fontSize: 10.5,
+            height: 1.7,
+            color: p.fgDim,
+          ),
+        ),
+        const SizedBox(height: 13),
+        action,
+      ],
     );
   }
 }
