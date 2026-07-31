@@ -24,17 +24,53 @@ statt dass alle ihr Guthaben verlieren.
 |---|---|
 | `POST /v1/devices` | Einmalige Geräteanmeldung. Gibt das Token **genau einmal** zurück — gespeichert wird nur sein SHA-256. |
 | `GET /v1/me` | Was das Kontingent noch hergibt. |
-| `POST /v1/generate` | Plan erzeugen. Reicht den Ereignisstrom von Anthropic durch und misst dabei den Verbrauch. |
+| `POST /v1/generate` | Plan erzeugen. Führt dabei das Gespräch mit dem Modell und lässt es im Pool suchen. |
+| `POST /v1/revise` | Änderungen an einem vorliegenden Plan. Liefert einen Patch, keinen neuen Plan. |
+| `POST /v1/plans/accept` | Ein angenommener Plan wandert in den geteilten Pool. |
 
-Zwei Dinge, die bewusst so sind:
+### Der Pool
+
+`pool_exercises` und `pool_programs` sind das Gedächtnis: Bausteine und
+angenommene Pläne, aus denen spätere Läufe schöpfen. Das Modell durchsucht sie
+über drei Werkzeuge (`uebungen_suchen`, `plaene_suchen`, `plan_laden`) und
+entscheidet selbst, wann.
+
+Die Reihenfolge ist der Punkt. Erst überlegt es, was der Plan braucht, dann
+prüft es gegen den Pool. Andersherum — Kandidaten vorlegen, bevor gedacht wurde
+— würde die Auswahl an den Fundus anpassen statt an das Anliegen. Im Prompt
+steht ausdrücklich, dass ein selbstgeschriebener Plan besser ist als ein
+zusammengeklaubter.
+
+Gesucht wird schlicht: Stichwörter gegen ein vorbereitetes Textfeld, Treffer
+gezählt, nach Häufigkeit sortiert. Kein FTS5, keine Vektoren — der semantische
+Teil sitzt im Modell, das die Stichwörter formuliert und die Treffer beurteilt.
+Wenn der Pool fünfstellig wird, ist `src/pool.ts` die Stelle zum Austauschen.
+
+### Was bewusst so ist
 
 - **Der Systemprompt liegt hier**, nicht in der App (`src/plan_prompt.ts`). Sonst
   könnte man ihn austauschen und den Schlüssel des Betreibers für beliebige
-  Textproduktion benutzen. Er muss inhaltlich mit `lib/data/ai_prompt.dart`
-  übereinstimmen — dort steht dieselbe Vorlage für den Weg über Kopieren und
-  Einfügen.
+  Textproduktion benutzen. `lib/data/ai_prompt.dart` hält eine verwandte Fassung
+  für den Weg über Kopieren und Einfügen — die kennt weder Werkzeuge noch Pool.
 - **Fehlgeschlagene Läufe zählen nicht.** `quotaFor()` überspringt Zeilen mit
   `status='failed'`. Wer nichts bekommen hat, soll nichts bezahlen.
+- **Der Pool füllt sich erst beim Annehmen.** Was jemand weggeworfen hat, soll
+  niemand als Vorlage bekommen.
+- **Der persönliche Teil wird nie geteilt.** Alles im Bundle ist öffentlich und
+  deshalb allgemein formuliert — über die Sache, nie über die Person. Was nur
+  einen Menschen angeht, steht in `personalNote`; die App schickt es gar nicht
+  erst mit, und der Server entfernt es zusätzlich.
+- **Überarbeiten ist ein Patch, keine Neuschrift.** Ein Plan hat rund 14.000
+  Token. Ihn für "die eine Übung passt nicht" neu schreiben zu lassen wäre teuer
+  und würde nebenbei alles umformulieren, womit der Nutzer zufrieden war.
+
+### Wer den Pool füllen darf
+
+Jedes angemeldete Gerät, das einen Plan annimmt. Beigetragene Zeilen tragen ihre
+`device_id`, damit sich eine schlechte Quelle nachvollziehen und ausräumen
+lässt. Eine strengere Fessel — etwa nur Pläne anzunehmen, die nachweislich aus
+einem eigenen Lauf stammen — ist noch nicht drin und wird nötig, sobald die App
+öffentlich ist.
 
 ## Ausrollen
 
@@ -46,10 +82,16 @@ npx wrangler d1 create levelup      # gibt eine database_id aus
 ```
 
 Die ausgegebene `database_id` in `wrangler.jsonc` eintragen — sie steht dort
-noch als Platzhalter.
+noch als Platzhalter. Achtung: `wrangler d1 create` trägt sich auch selbst ein,
+aber als *zweite* Bindung. Der Code benutzt `DB` — dort gehört die Kennung hin,
+die zweite Bindung muss weg.
+
+Die beiden Schema-Dateien sind getrennt, weil `ALTER TABLE` nicht wiederholbar
+ist. Wer bei null anfängt, spielt beide der Reihe nach ein.
 
 ```bash
 npx wrangler d1 execute levelup --remote --file=schema.sql
+npx wrangler d1 execute levelup --remote --file=schema_v2.sql
 npx wrangler secret put ANTHROPIC_API_KEY   # Schlüssel aus der Anthropic-Konsole
 npx wrangler deploy
 ```
