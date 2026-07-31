@@ -26,11 +26,19 @@ genauer beschreiben. Der Unterschied: kann man aufhören, wenn Schritt zwei
 sitzt, und den Rest morgen machen? Dann sind es mehrere Übungen.
 
 instructions erklären, wie man die eine Sache richtig macht. Sie sind kein
-Programm und keine Reihenfolge von Aufgaben. Drei bis fünf Zeilen reichen.
+Programm und keine Reihenfolge von Aufgaben. Drei bis fünf Zeilen reichen,
+höchstens sechs.
+
+Der Name benennt die Sache, er beschreibt sie nicht. "Blattlesen im Viervierteltakt"
+ist ein Name. "Erst Takt klopfen und dann die Melodie lesen" ist keiner.
 
 Eine Einheit besteht aus mehreren Übungen — meist drei bis sechs. Eine Einheit
 mit einer einzigen, großen Übung ist fast immer falsch geschnitten: sie ist in
 Wahrheit eine Einheit aus mehreren Übungen, die zusammengeschrieben wurde.
+
+Jede Übung braucht ein "summary" (ein bis zwei Sätze, worum es geht) und
+mindestens einen Eintrag in "benefits" (wofür das gut ist). Ohne beides steht
+der Nutzer vor einem Titel und weiß nicht, warum er das tun soll.
 
 MATERIAL
 

@@ -121,6 +121,20 @@ beurteilt. Das funktioniert nachweislich (vier Suchläufe, deutsch und englisch
 gemischt, 12 von 14 Bausteinen gefunden). Bei fünfstelligem Pool ist
 `src/pool.ts` die Stelle zum Austauschen; die Schnittstelle bleibt.
 
+### 10b. Die Übungsprüfung hat keinen automatischen Test
+
+`server/src/exercise_spec.ts` prüft jede erzeugte Übung und löst bei Verstößen
+eine Korrekturrunde aus — sie entscheidet also mit, was in den Pool kommt. Für
+den Worker gibt es aber kein Testgerüst; geprüft wurde von Hand gegen einen
+echten Plan (0 Beanstandungen) und gegen ein absichtlich schlechtes Bundle (5
+richtige). Das gehört in einen Test, sobald der Worker eins bekommt.
+
+Beim Bauen ist übrigens genau der Fehler passiert, vor dem die Prüfung schützen
+soll: die erste Fassung verglich `requirements` mit dem Text und meldete bei
+einem echten Plan 25 Beanstandungen, darunter "Tastatur" bei einer Tipp-Übung.
+Ein Prüfer mit überwiegend Fehlalarmen ist schlechter als keiner. Die Prüfung
+deckt jetzt nur noch Eindeutiges ab; Material bleibt reine Prompt-Regel.
+
 ### 11. Zwei Prompts, die auseinanderlaufen können
 
 `server/src/plan_prompt.ts` ist der verbindliche. `lib/data/ai_prompt.dart` ist

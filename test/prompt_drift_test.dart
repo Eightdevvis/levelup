@@ -16,10 +16,18 @@ void main() {
   late String serverPrompt;
 
   setUpAll(() {
-    final datei = File('server/src/plan_prompt.ts');
+    // Der Server setzt seinen Prompt aus zwei Dateien zusammen: die Regeln
+    // für Übungen stehen in exercise_spec.ts, weil sie dort auch geprüft
+    // werden. Beide zusammen sind der Prompt.
+    final teile = [
+      File('server/src/plan_prompt.ts'),
+      File('server/src/exercise_spec.ts'),
+    ];
     // Ohne den Server (etwa in einem abgespeckten Checkout) ist hier nichts
     // zu prüfen — dann soll der Test nicht fälschlich rot werden.
-    serverPrompt = datei.existsSync() ? datei.readAsStringSync() : '';
+    serverPrompt = teile.every((f) => f.existsSync())
+        ? teile.map((f) => f.readAsStringSync()).join('\n')
+        : '';
   });
 
   /// Regeln, die in beiden Fassungen stehen müssen. Kurze, wörtliche Stücke:
@@ -28,6 +36,7 @@ void main() {
     'Materialregel': 'was jemand hat, der diese Fähigkeit übt',
     'Eine Übung ist eine Sache': 'Eine Übung ist EINE Sache, die man tut',
     'Einheit aus mehreren Übungen': 'meist drei bis sechs',
+    'Name benennt, beschreibt nicht': 'Der Name benennt die Sache',
     'Zweifelsregel': 'Im Zweifel die Übung, die nichts braucht',
     'Diagnose zuerst': 'rationale',
     'Quote statt Dauer': 'nicht "duration"',

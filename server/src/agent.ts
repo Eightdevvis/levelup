@@ -38,6 +38,7 @@ export type AgentEvent =
   | { type: 'search'; tool: string; terms: string[]; hits: number }
   | { type: 'writing'; chars: number }
   | { type: 'reuse'; ids: string[] }
+  | { type: 'repair'; problems: number }
   | { type: 'done'; text: string }
   | { type: 'error'; message: string; code: string };
 
@@ -362,11 +363,18 @@ export async function run(
   firstMessage: unknown,
   emit: (event: AgentEvent) => void,
   withTools: boolean,
+  /// Prüft das fertige Dokument. Liefert Beanstandungen in Klartext; leer
+  /// heißt in Ordnung. Wird verletzt, bekommt das Modell sie zu lesen und
+  /// einen Versuch, nachzubessern.
+  validate?: (text: string) => string[],
 ): Promise<AgentRun> {
   const messages: unknown[] = [{ role: 'user', content: firstMessage }];
   const usage: Usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, stopReason: null };
   const reused: string[] = [];
   let chars = 0;
+  // Eine Nachbesserung, nicht mehr. Wer zweimal dieselbe Regel bricht, bricht
+  // sie auch beim dritten Mal, und jede Runde kostet.
+  let repairsLeft = 1;
 
   for (let turn = 0; turn < MAX_TURNS; turn++) {
     const response = await fetch(ANTHROPIC_URL, {
@@ -399,6 +407,27 @@ export async function run(
     chars += result.text.length;
 
     if (result.stopReason !== 'tool_use' || result.toolCalls.length === 0) {
+      const probleme =
+        result.stopReason === 'end_turn' && validate !== undefined
+          ? validate(result.text)
+          : [];
+
+      if (probleme.length > 0 && repairsLeft > 0) {
+        repairsLeft--;
+        emit({ type: 'repair', problems: probleme.length });
+        messages.push({ role: 'assistant', content: result.content });
+        messages.push({
+          role: 'user',
+          content:
+            'Der Plan verletzt die Regeln für Übungen:\n\n' +
+            probleme.map((x) => `- ${x}`).join('\n') +
+            '\n\nGib das vollständige JSON-Dokument noch einmal aus, mit ' +
+            'diesen Punkten behoben. Ändere nichts anderes.',
+        });
+        chars = 0;
+        continue;
+      }
+
       return { text: result.text, stopReason: result.stopReason, usage, reused };
     }
 

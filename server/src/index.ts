@@ -1,6 +1,7 @@
 import { run, UpstreamError, type AgentEvent, type Usage } from './agent';
 import { PLAN_SYSTEM_PROMPT } from './plan_prompt';
 import { REVISE_SYSTEM_PROMPT } from './revise_prompt';
+import { checkBundle } from './exercise_spec';
 import { listPrograms, loadProgram, storeExercises, storeProgram } from './pool';
 
 /**
@@ -211,6 +212,7 @@ function streamRun(
   message: unknown,
   withTools: boolean,
   finish: (document: Record<string, unknown>, reused: string[]) => unknown,
+  validate?: (text: string) => string[],
 ): Response {
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
   const writer = writable.getWriter();
@@ -239,6 +241,7 @@ function streamRun(
           message,
           (event: AgentEvent) => send(event),
           withTools,
+          validate,
         );
         usage = result.usage;
 
@@ -390,6 +393,13 @@ async function generate(
       // Formatfehler, und es soll auch nicht als solcher gemeldet werden.
       if (!Array.isArray(programs) || programs.length === 0) return null;
       return { type: 'done', bundle: document, reused };
+    },
+    // Die Übung ist der Baustein, aus dem alles andere besteht. Ein schlechter
+    // Plan wird weggeworfen; eine schlechte Übung landet im Pool und wird von
+    // da an weiterverwendet. Deshalb wird sie geprüft, nicht nur erbeten.
+    (text) => {
+      const document = extractJson(text);
+      return document === null ? [] : checkBundle(document);
     },
   );
 }
