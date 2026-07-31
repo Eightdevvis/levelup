@@ -109,7 +109,7 @@ class _Header extends StatelessWidget {
                   'ÜBUNGSPROGRAMME',
                   style: TextStyle(
                     fontFamily: Metrics.mono,
-                    fontSize: 8.5,
+                    fontSize: 10,
                     letterSpacing: 4,
                     color: p.fgFaint,
                   ),
@@ -255,7 +255,7 @@ class _ProgramBox extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: Metrics.mono,
-                      fontSize: 9.5,
+                      fontSize: 10.5,
                       letterSpacing: 1.2,
                       color: color,
                     ),
@@ -265,7 +265,7 @@ class _ProgramBox extends StatelessWidget {
                   '$doneDays/$totalDays',
                   style: TextStyle(
                     fontFamily: Metrics.mono,
-                    fontSize: 9.5,
+                    fontSize: 10.5,
                     letterSpacing: 1,
                     color: p.fgFaint,
                   ),
@@ -277,7 +277,7 @@ class _ProgramBox extends StatelessWidget {
               'NICHT GESTARTET',
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 9.5,
+                fontSize: 10.5,
                 letterSpacing: 1.6,
                 color: p.fgFaint,
               ),

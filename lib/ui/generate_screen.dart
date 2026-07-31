@@ -422,7 +422,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
                 '${_reused.isEmpty ? "" : " · ${_reused.length} ÜBERNOMMEN"}',
                 style: TextStyle(
                   fontFamily: Metrics.mono,
-                  fontSize: 9.5,
+                  fontSize: 10.5,
                   letterSpacing: 1.2,
                   color: p.fgFaint,
                 ),
@@ -632,7 +632,7 @@ class _Progress extends StatelessWidget {
                 '$chars ZEICHEN',
                 style: TextStyle(
                   fontFamily: Metrics.mono,
-                  fontSize: 9.5,
+                  fontSize: 10.5,
                   letterSpacing: 1.3,
                   color: p.fgFaint,
                 ),

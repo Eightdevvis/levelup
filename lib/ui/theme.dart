@@ -84,10 +84,13 @@ class Palette {
     bgSel: Color(0xFFE8E8E8),
     fg: Color(0xFF000000),
     fgDim: Color(0xFF4A4A4A),
-    // 0xFF8C8C8C wäre hübscher, ergibt auf Weiß aber nur 3,4:1 Kontrast —
-    // unter der Lesbarkeitsgrenze von 4,5:1. Auf dem Handy war Text in
-    // diesem Ton nicht mehr lesbar. Jetzt 5,1:1.
-    fgFaint: Color(0xFF6E6E6E),
+    // Zielgerät ist ein Bigme Color, also Kaleido-Farb-E-Ink. Die
+    // Farbfilterschicht kostet Kontrast, und Graustufen werden gerastert —
+    // ein kleines mittelgraues Zeichen zerfällt dort, ein fast schwarzes
+    // bleibt scharf. 0xFF8C8C8C ergab 3,4:1 und war unlesbar; das hier sind
+    // 6,2:1. Wer den Ton wieder heller will, ändert ihn hier, nicht an den
+    // Verwendungsstellen.
+    fgFaint: Color(0xFF5F5F5F),
     border: Color(0xFF000000),
     accent: Color(0xFF000000),
     onAccent: Color(0xFFFFFFFF),
@@ -110,7 +113,7 @@ class Palette {
     bgSel: Color(0xFF242424),
     fg: Color(0xFFFFFFFF),
     fgDim: Color(0xFFB4B4B4),
-    fgFaint: Color(0xFF767676),
+    fgFaint: Color(0xFF909090),
     border: Color(0xFFFFFFFF),
     accent: Color(0xFFFFFFFF),
     onAccent: Color(0xFF000000),

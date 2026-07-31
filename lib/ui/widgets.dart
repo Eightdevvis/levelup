@@ -124,7 +124,7 @@ class ZBox extends StatelessWidget {
                         trailing!.toUpperCase(),
                         style: TextStyle(
                           fontFamily: Metrics.mono,
-                          fontSize: 9.5,
+                          fontSize: 10.5,
                           letterSpacing: 1.4,
                           height: 1.4,
                           color: p.fgFaint,

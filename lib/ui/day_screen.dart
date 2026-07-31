@@ -63,7 +63,7 @@ class DayScreen extends StatelessWidget {
             '${day.positionLabel.toUpperCase()}',
             style: TextStyle(
               fontFamily: Metrics.mono,
-              fontSize: 9.5,
+              fontSize: 10.5,
               letterSpacing: 1.4,
               color: color,
             ),
@@ -94,7 +94,7 @@ class DayScreen extends StatelessWidget {
               '${isDone ? " · ERLEDIGT" : ""}',
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 9,
+                fontSize: 10,
                 letterSpacing: 1.3,
                 color: isDone ? color : p.fgFaint,
               ),
@@ -199,7 +199,7 @@ class _ItemBox extends StatelessWidget {
                     set.describe().toUpperCase(),
                     style: TextStyle(
                       fontFamily: Metrics.mono,
-                      fontSize: 9.5,
+                      fontSize: 10.5,
                       letterSpacing: 0.8,
                       color: color,
                     ),
@@ -226,7 +226,7 @@ class _ItemBox extends StatelessWidget {
               '↗ ${item.slot.progression.describe().toUpperCase()}',
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 9,
+                fontSize: 10,
                 letterSpacing: 1.1,
                 color: p.fgFaint,
               ),

@@ -257,7 +257,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     : day.title.toUpperCase(),
                 style: TextStyle(
                   fontFamily: Metrics.mono,
-                  fontSize: 9.5,
+                  fontSize: 10.5,
                   letterSpacing: 1.6,
                   color: color,
                 ),
@@ -462,7 +462,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               '// $doneSets VON ${_steps.length} SÄTZEN$skipped',
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 9.5,
+                fontSize: 10.5,
                 letterSpacing: 1.3,
                 color: p.fgFaint,
               ),
@@ -561,7 +561,7 @@ class _TimerPanel extends StatelessWidget {
                   : 'TIPPEN ZUM STARTEN',
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 8.5,
+                fontSize: 10,
                 letterSpacing: 1.5,
                 color: p.fgFaint,
               ),
@@ -626,7 +626,7 @@ class _CounterPanel extends StatelessWidget {
             'ANPASSEN, WENN ES ABWICH',
             style: TextStyle(
               fontFamily: Metrics.mono,
-              fontSize: 8.5,
+              fontSize: 10,
               letterSpacing: 1.3,
               color: p.fgFaint,
             ),
@@ -701,7 +701,7 @@ class _QuotaPanel extends StatelessWidget {
             '$remaining VERSUCHE ÜBRIG',
             style: TextStyle(
               fontFamily: Metrics.mono,
-              fontSize: 8.5,
+              fontSize: 10,
               letterSpacing: 1.4,
               color: p.fgFaint,
             ),
@@ -763,7 +763,7 @@ class _OpenPanel extends StatelessWidget {
             'KEIN ZIELWERT — NUR ERLEDIGT',
             style: TextStyle(
               fontFamily: Metrics.mono,
-              fontSize: 8.5,
+              fontSize: 10,
               letterSpacing: 1.4,
               color: p.fgFaint,
             ),
@@ -877,7 +877,7 @@ class _CueStrip extends StatelessWidget {
             cues[index].toUpperCase(),
             style: TextStyle(
               fontFamily: Metrics.mono,
-              fontSize: 8.5,
+              fontSize: 10,
               letterSpacing: 1.1,
               color: color,
             ),
@@ -944,7 +944,7 @@ class _SummaryRow extends StatelessWidget {
             skipped ? 'AUSGELASSEN' : '$done/${item.sets.length}',
             style: TextStyle(
               fontFamily: Metrics.mono,
-              fontSize: 9.5,
+              fontSize: 10.5,
               letterSpacing: 1.1,
               color: p.fgFaint,
             ),

@@ -3,15 +3,31 @@ import 'package:flutter/services.dart';
 
 import '../engine/resolver.dart';
 import '../main.dart';
+import '../model/library.dart';
 import '../model/program.dart';
+import '../model/session.dart';
 import 'day_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
 class ProgramScreen extends StatefulWidget {
-  const ProgramScreen({super.key, required this.programId});
+  const ProgramScreen({super.key, required this.programId, this.preview});
 
   final String programId;
+
+  /// Ein Plan, der noch NICHT in der Bibliothek des Nutzers liegt.
+  ///
+  /// Reinschauen und Übernehmen sind zwei verschiedene Dinge. Vorher wurde
+  /// beim Antippen in der offenen Bibliothek sofort installiert — wer nur
+  /// schauen wollte, hatte das Programm danach auf dem Startbildschirm. Und
+  /// weil es der normale Programmbildschirm war, stand dort auch "Programm
+  /// löschen", was in einer geteilten Bibliothek nichts zu suchen hat.
+  ///
+  /// Im Vorschaumodus gibt es deshalb kein Menü, keinen Fortschritt und keinen
+  /// Weg in den Player — nur den Knopf, es wirklich zu übernehmen.
+  final Bundle? preview;
+
+  bool get isPreview => preview != null;
 
   @override
   State<ProgramScreen> createState() => _ProgramScreenState();
@@ -23,7 +39,10 @@ class _ProgramScreenState extends State<ProgramScreen> {
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
-    final program = state.library.program(widget.programId);
+    final library = widget.preview == null
+        ? state.library
+        : const Library().merge(widget.preview!);
+    final program = library.program(widget.programId);
 
     if (program == null) {
       return const Scaffold(
@@ -33,15 +52,22 @@ class _ProgramScreenState extends State<ProgramScreen> {
 
     final p = AppTheme.paletteOf(context);
     final color = AppTheme.domainColor(context, program.domain);
-    final progress = state.progressFor(program.id);
-    final resolver = state.resolver;
-    final missing = state.library.missingReferences(program.id);
+    // In der Vorschau gibt es keinen Fortschritt — das Programm hat nie
+    // begonnen und darf auch keinen anfangen.
+    final progress = widget.isPreview
+        ? ProgramProgress(programId: program.id, startedAt: DateTime.now())
+        : state.progressFor(program.id);
+    final resolver = ProgramResolver(library);
+    final missing = library.missingReferences(program.id);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(program.name.toUpperCase()),
         actions: [
-          PopupMenuButton<String>(
+          // Kein Menü in der Vorschau: nichts hiervon gehört zu einem Plan,
+          // der einem noch nicht gehört.
+          if (!widget.isPreview)
+            PopupMenuButton<String>(
             icon: Icon(Icons.more_horiz, color: p.fgDim),
             onSelected: (value) => _onMenu(context, value, program),
             itemBuilder: (_) => const [
@@ -70,7 +96,7 @@ class _ProgramScreenState extends State<ProgramScreen> {
                 '${program.totalWeeks} WOCHEN · ${program.totalDays} TAGE',
                 style: TextStyle(
                   fontFamily: Metrics.mono,
-                  fontSize: 9.5,
+                  fontSize: 10.5,
                   letterSpacing: 1.4,
                   color: p.fgFaint,
                 ),
@@ -111,26 +137,36 @@ class _ProgramScreenState extends State<ProgramScreen> {
             _WarningBox(problems: missing),
           ],
           const SizedBox(height: 22),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: color,
-              foregroundColor: p.onAccent,
+          if (widget.isPreview)
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: p.onAccent,
+              ),
+              onPressed: () => _adopt(context, program),
+              child: const Text('IN MEINE BIBLIOTHEK'),
+            )
+          else
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: p.onAccent,
+              ),
+              onPressed: () async {
+                await state.startProgram(program.id);
+                if (!context.mounted) return;
+                _openDay(
+                  context,
+                  program,
+                  state.progressFor(program.id).currentDay,
+                );
+              },
+              child: Text(
+                state.hasStarted(program.id)
+                    ? 'WEITERMACHEN'
+                    : 'PROGRAMM STARTEN',
+              ),
             ),
-            onPressed: () async {
-              await state.startProgram(program.id);
-              if (!context.mounted) return;
-              _openDay(
-                context,
-                program,
-                state.progressFor(program.id).currentDay,
-              );
-            },
-            child: Text(
-              state.hasStarted(program.id)
-                  ? 'WEITERMACHEN'
-                  : 'PROGRAMM STARTEN',
-            ),
-          ),
           const SectionLabel('phasen'),
           for (var i = 0; i < program.phases.length; i++)
             Padding(
@@ -146,10 +182,37 @@ class _ProgramScreenState extends State<ProgramScreen> {
                 onToggle: () => setState(
                   () => _expandedPhase = _expandedPhase == i ? -1 : i,
                 ),
-                onOpenDay: (globalDay) => _openDay(context, program, globalDay),
+                // In der Vorschau führt kein Tag in den Player: der greift
+                // auf die Bibliothek des Nutzers zu, in der es das Programm
+                // noch gar nicht gibt.
+                onOpenDay: widget.isPreview
+                    ? null
+                    : (globalDay) => _openDay(context, program, globalDay),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// Übernehmen ist der einzige Weg, wie ein Plan aus der Vorschau in die
+  /// eigene Bibliothek kommt — bewusst ein Knopfdruck, nicht ein Blick.
+  Future<void> _adopt(BuildContext context, Program program) async {
+    final state = AppScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    await state.installBundle(widget.preview!);
+    if (!context.mounted) return;
+
+    messenger.showSnackBar(
+      SnackBar(content: Text('// ${program.name.toUpperCase()} ÜBERNOMMEN')),
+    );
+    // Ersetzen statt draufsetzen: der Zurück-Weg soll nicht in eine Vorschau
+    // führen, die es so nicht mehr gibt.
+    navigator.pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => ProgramScreen(programId: program.id),
       ),
     );
   }
@@ -291,7 +354,8 @@ class _PhaseBox extends StatelessWidget {
   final Set<int> completedDays;
   final int currentDay;
   final VoidCallback onToggle;
-  final void Function(int globalDay) onOpenDay;
+  /// Null in der Vorschau — dort führt kein Tag irgendwohin.
+  final void Function(int globalDay)? onOpenDay;
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +427,7 @@ class _PhaseBox extends StatelessWidget {
               '${phase.weeks} WOCHEN · ${phase.schedule.cycleLength} TAGE/ZYKLUS',
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 9.5,
+                fontSize: 10.5,
                 letterSpacing: 1.2,
                 color: p.fgFaint,
               ),
@@ -377,7 +441,7 @@ class _PhaseBox extends StatelessWidget {
                 expanded ? '[ − ZUKLAPPEN ]' : '[ + WOCHEN ZEIGEN ]',
                 style: TextStyle(
                   fontFamily: Metrics.mono,
-                  fontSize: 9.5,
+                  fontSize: 10.5,
                   letterSpacing: 1.2,
                   color: p.fgDim,
                 ),
@@ -412,7 +476,8 @@ class _WeekRow extends StatelessWidget {
   final int startDay;
   final Set<int> completedDays;
   final int currentDay;
-  final void Function(int globalDay) onOpenDay;
+  /// Null in der Vorschau — dort führt kein Tag irgendwohin.
+  final void Function(int globalDay)? onOpenDay;
 
   @override
   Widget build(BuildContext context) {
@@ -429,7 +494,7 @@ class _WeekRow extends StatelessWidget {
               'W${week + 1}',
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 9,
+                fontSize: 10,
                 letterSpacing: 0.8,
                 color: p.fgFaint,
               ),
@@ -446,7 +511,9 @@ class _WeekRow extends StatelessWidget {
                     color: color,
                     isDone: completedDays.contains(startDay + i),
                     isCurrent: currentDay == startDay + i,
-                    onTap: () => onOpenDay(startDay + i),
+                    onTap: onOpenDay == null
+                        ? null
+                        : () => onOpenDay!(startDay + i),
                   ),
               ],
             ),
@@ -470,7 +537,8 @@ class _DaySquare extends StatelessWidget {
   final Color color;
   final bool isDone;
   final bool isCurrent;
-  final VoidCallback onTap;
+  /// Null, wenn der Tag nirgendwohin führt — Pausentag oder Vorschau.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

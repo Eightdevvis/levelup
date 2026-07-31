@@ -54,25 +54,26 @@ class _OpenLibraryScreenState extends State<OpenLibraryScreen> {
     }
   }
 
-  Future<void> _install(CatalogEntry entry) async {
-    final state = AppScope.of(context);
+  /// Öffnet den Plan zum Ansehen — ohne ihn zu übernehmen.
+  ///
+  /// Vorher wurde beim Antippen sofort installiert. Wer nur schauen wollte,
+  /// hatte das Programm danach auf seinem Startbildschirm stehen. Übernommen
+  /// wird jetzt erst im Vorschaubildschirm, per Knopf.
+  Future<void> _preview(CatalogEntry entry) async {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _installing.add(entry.id));
 
     try {
       final bundle = await _client.fetchBundle(entry);
-      await state.installBundle(bundle);
       if (!mounted) return;
       setState(() => _installing.remove(entry.id));
-      messenger.showSnackBar(
-        SnackBar(content: Text('// ${entry.name.toUpperCase()} GELADEN')),
-      );
-      if (!mounted) return;
-      Navigator.of(context).push(
+      await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => ProgramScreen(programId: entry.id),
+          builder: (_) =>
+              ProgramScreen(programId: entry.id, preview: bundle),
         ),
       );
+      if (mounted) setState(() {});
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _installing.remove(entry.id));
@@ -128,7 +129,7 @@ class _OpenLibraryScreenState extends State<OpenLibraryScreen> {
               entry: entry,
               installed: state.library.program(entry.id) != null,
               busy: _installing.contains(entry.id),
-              onInstall: () => _install(entry),
+              onInstall: () => _preview(entry),
             );
           },
         ),
@@ -149,7 +150,7 @@ class _OpenLibraryScreenState extends State<OpenLibraryScreen> {
                     '// ${entries.length} PROGRAMME IN DER BIBLIOTHEK',
                     style: TextStyle(
                       fontFamily: Metrics.mono,
-                      fontSize: 8.5,
+                      fontSize: 10,
                       letterSpacing: 1.4,
                       color: p.fgFaint,
                     ),
@@ -203,7 +204,7 @@ class _CatalogBox extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 10.5,
+                fontSize: 11.5,
                 height: 1.6,
                 color: p.fgDim,
               ),
@@ -220,9 +221,9 @@ class _CatalogBox extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: Metrics.mono,
-                    fontSize: 8.5,
+                    fontSize: 10.5,
                     letterSpacing: 1.3,
-                    color: p.fgFaint,
+                    color: p.fgDim,
                   ),
                 ),
               ),
@@ -237,10 +238,10 @@ class _CatalogBox extends StatelessWidget {
                 )
               else
                 Text(
-                  installed ? 'GELADEN' : '[ + LADEN ]',
+                  installed ? 'GELADEN' : '[ ANSEHEN ]',
                   style: TextStyle(
                     fontFamily: Metrics.mono,
-                    fontSize: 9.5,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.3,
                     color: installed ? p.fgFaint : p.accent,
