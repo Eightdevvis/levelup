@@ -128,9 +128,9 @@ class OpenLibraryClient {
     }
 
     if (response.statusCode == 404) {
-      throw const OpenLibraryException(
-        'Die Bibliothek ist unter dieser Adresse nicht erreichbar (404).',
-      );
+      // Die Adresse mitgeben: der häufigste Fall ist, dass der Katalog noch
+      // nicht auf dem Branch liegt, von dem hier gelesen wird.
+      throw OpenLibraryException('Nicht gefunden (404):\n$url');
     }
     if (response.statusCode != 200) {
       throw OpenLibraryException(
