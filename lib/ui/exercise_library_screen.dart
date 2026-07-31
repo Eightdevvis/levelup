@@ -53,7 +53,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                 prefixIcon: const Icon(Icons.search, size: 20),
                 filled: true,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.zero,
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 4),
@@ -77,7 +77,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
                     _FilterPill(
                       label: domain,
                       selected: _domainFilter == domain,
-                      color: AppTheme.domainColor(domain),
+                      color: AppTheme.domainColor(context, domain),
                       onTap: () => setState(
                         () => _domainFilter =
                             _domainFilter == domain ? null : domain,
@@ -134,7 +134,7 @@ class _FilterPill extends StatelessWidget {
             color: selected
                 ? color.withValues(alpha: 0.2)
                 : scheme.onSurface.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.zero,
           ),
           child: Text(
             label,
@@ -158,11 +158,11 @@ class _ExerciseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = AppTheme.domainColor(exercise.domain);
+    final color = AppTheme.domainColor(context, exercise.domain);
 
     return Card(
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.zero,
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => ExerciseScreen(exercise: exercise),
@@ -177,7 +177,7 @@ class _ExerciseTile extends StatelessWidget {
                 height: 34,
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.zero,
                 ),
               ),
               const SizedBox(width: 12),

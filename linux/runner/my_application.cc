@@ -45,14 +45,17 @@ static void my_application_activate(GApplication* application) {
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "programs");
+    gtk_header_bar_set_title(header_bar, "LevelUp");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
-    gtk_window_set_title(window, "programs");
+    gtk_window_set_title(window, "LevelUp");
   }
 
-  gtk_window_set_default_size(window, 1280, 720);
+  // Handy-Format statt Desktop-Breite: die App ist für ein Telefon gebaut, und
+  // das Layout (eine Karte pro Zeile, Player auf volle Breite) ergibt nur in
+  // dieser Proportion Sinn. 400x860 entspricht etwa einem heutigen Gerät.
+  gtk_window_set_default_size(window, 400, 860);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(

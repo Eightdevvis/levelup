@@ -10,13 +10,28 @@ Future<void> _pumpApp(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Box-Titel werden als RichText mit `┤ … ├` gesetzt — `find.text` greift dort
+/// nicht, weil der Text aus mehreren Abschnitten besteht.
+Finder findRich(String needle) => find.byWidgetPredicate(
+      (w) =>
+          w is RichText &&
+          w.text.toPlainText().toUpperCase().contains(needle.toUpperCase()),
+    );
+
 void main() {
-  testWidgets('Startbildschirm zeigt die Seed-Programme', (tester) async {
+  testWidgets('Startbildschirm zeigt Wortmarke und Seed-Programme',
+      (tester) async {
     await _pumpApp(tester);
 
-    expect(find.text('Programme'), findsOneWidget);
+    expect(find.text('LEVELUP'), findsOneWidget);
+    expect(find.text('ÜBUNGSPROGRAMME'), findsOneWidget);
     expect(find.text('Bach lesen lernen'), findsOneWidget);
     expect(find.text('Kraft Grundprogramm'), findsOneWidget);
+  });
+
+  testWidgets('Statuszeile zählt Programme und Übungen', (tester) async {
+    await _pumpApp(tester);
+    expect(find.textContaining('// 4 PROGRAMME'), findsOneWidget);
   });
 
   testWidgets('Programm öffnen zeigt Begründung und Phasen', (tester) async {
@@ -25,9 +40,10 @@ void main() {
     await tester.tap(find.text('Bach lesen lernen'));
     await tester.pumpAndSettle();
 
-    expect(find.text('WARUM DIESER PLAN'), findsOneWidget);
-    expect(find.text('Notation automatisieren'), findsOneWidget);
-    expect(find.text('Programm starten'), findsOneWidget);
+    // Titel sitzt eingekerbt in der Kante, deshalb der RichText-Finder.
+    expect(findRich('WARUM DIESER PLAN'), findsOneWidget);
+    expect(findRich('NOTATION AUTOMATISIEREN'), findsOneWidget);
+    expect(find.text('PROGRAMM STARTEN'), findsOneWidget);
   });
 
   testWidgets('Tag öffnen und Session starten führt in den Player',
@@ -37,19 +53,19 @@ void main() {
     await tester.tap(find.text('Gehörtraining Grundstock'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Programm starten'));
+    await tester.tap(find.text('PROGRAMM STARTEN'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Session starten'), findsOneWidget);
+    expect(find.text('SESSION STARTEN'), findsOneWidget);
     expect(find.text('Intervalle hören'), findsOneWidget);
 
-    await tester.tap(find.text('Session starten'));
+    await tester.tap(find.text('SESSION STARTEN'));
     await tester.pumpAndSettle();
 
     // Player: erster Schritt von zweien, Quoten-Bedienung sichtbar.
-    expect(find.text('1 / 2'), findsOneWidget);
-    expect(find.text('richtig'), findsOneWidget);
-    expect(find.text('daneben'), findsOneWidget);
+    expect(find.text('01 / 02'), findsOneWidget);
+    expect(find.text('RICHTIG'), findsOneWidget);
+    expect(find.text('DANEBEN'), findsOneWidget);
   });
 
   testWidgets('Quoten-Übung zählt Treffer und führt zum Abschluss',
@@ -58,45 +74,45 @@ void main() {
 
     await tester.tap(find.text('Gehörtraining Grundstock'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Programm starten'));
+    await tester.tap(find.text('PROGRAMM STARTEN'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Session starten'));
+    await tester.tap(find.text('SESSION STARTEN'));
     await tester.pumpAndSettle();
 
     // "Erledigt" bleibt gesperrt, solange kein Versuch gezählt wurde.
-    final erledigt = find.widgetWithText(FilledButton, 'Erledigt');
+    final erledigt = find.widgetWithText(FilledButton, 'ERLEDIGT');
     expect(tester.widget<FilledButton>(erledigt).onPressed, isNull);
 
-    await tester.tap(find.byIcon(Icons.check_rounded));
+    await tester.tap(find.text('RICHTIG'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Erledigt'));
+    await tester.tap(find.widgetWithText(FilledButton, 'ERLEDIGT'));
     await tester.pumpAndSettle();
 
-    expect(find.text('2 / 2'), findsOneWidget);
+    expect(find.text('02 / 02'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.check_rounded));
+    await tester.tap(find.text('RICHTIG'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Fertig'));
+    await tester.tap(find.widgetWithText(FilledButton, 'FERTIG'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Tag abschließen'), findsOneWidget);
+    expect(find.text('TAG ABSCHLIESSEN'), findsOneWidget);
   });
 
   testWidgets('Übungsbibliothek listet die Domänen', (tester) async {
     await _pumpApp(tester);
 
-    await tester.tap(find.byIcon(Icons.grid_view_rounded));
+    await tester.tap(find.byIcon(Icons.grid_view));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Übungen ('), findsOneWidget);
-    expect(find.text('geige'), findsWidgets);
+    expect(find.text('GEIGE'), findsWidgets);
   });
 
   testWidgets('Importbildschirm ist erreichbar', (tester) async {
     await _pumpApp(tester);
 
-    await tester.tap(find.byIcon(Icons.add_circle_outline));
+    await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
 
     expect(find.text('Prompt in Zwischenablage'), findsOneWidget);

@@ -31,38 +31,48 @@ class _ProgramScreenState extends State<ProgramScreen> {
       );
     }
 
-    final scheme = Theme.of(context).colorScheme;
-    final color = AppTheme.domainColor(program.domain);
+    final p = AppTheme.paletteOf(context);
+    final color = AppTheme.domainColor(context, program.domain);
     final progress = state.progressFor(program.id);
     final resolver = state.resolver;
     final missing = state.library.missingReferences(program.id);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(program.name, overflow: TextOverflow.ellipsis),
+        title: Text(program.name.toUpperCase()),
         actions: [
           PopupMenuButton<String>(
+            icon: Icon(Icons.more_horiz, color: p.fgDim),
             onSelected: (value) => _onMenu(context, value, program),
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'export', child: Text('Als JSON kopieren')),
-              PopupMenuItem(value: 'reset', child: Text('Fortschritt zurücksetzen')),
+              PopupMenuItem(
+                value: 'reset',
+                child: Text('Fortschritt zurücksetzen'),
+              ),
               PopupMenuItem(value: 'delete', child: Text('Programm löschen')),
             ],
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: p.border),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
+        padding: const EdgeInsets.fromLTRB(15, 16, 15, 40),
         children: [
           Row(
             children: [
               DomainChip(program.domain),
-              const SizedBox(width: 8),
+              const SizedBox(width: 9),
               Text(
-                '${program.totalWeeks} Wochen · ${program.totalDays} Tage',
+                '${program.totalWeeks} WOCHEN · ${program.totalDays} TAGE',
                 style: TextStyle(
-                  fontSize: 12.5,
-                  color: scheme.onSurface.withValues(alpha: 0.6),
+                  fontFamily: Metrics.mono,
+                  fontSize: 9.5,
+                  letterSpacing: 1.4,
+                  color: p.fgFaint,
                 ),
               ),
             ],
@@ -71,46 +81,73 @@ class _ProgramScreenState extends State<ProgramScreen> {
             const SizedBox(height: 14),
             Text(
               program.description!,
-              style: const TextStyle(fontSize: 14.5, height: 1.5),
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 11.5,
+                height: 1.65,
+                color: p.fg,
+              ),
             ),
           ],
           if (program.rationale != null) ...[
-            const SizedBox(height: 16),
-            _RationaleCard(text: program.rationale!, color: color),
+            const SizedBox(height: 20),
+            ZBox(
+              title: 'warum dieser plan',
+              accent: color,
+              filled: false,
+              child: Text(
+                program.rationale!,
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 11,
+                  height: 1.7,
+                  color: p.fgDim,
+                ),
+              ),
+            ),
           ],
           if (missing.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _WarningCard(problems: missing),
+            const SizedBox(height: 18),
+            _WarningBox(problems: missing),
           ],
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: color),
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: Text(
-              state.hasStarted(program.id) ? 'Weitermachen' : 'Programm starten',
+          const SizedBox(height: 22),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: p.brightness == Brightness.light
+                  ? const Color(0xFFF4ECD6)
+                  : p.bg,
             ),
             onPressed: () async {
               await state.startProgram(program.id);
               if (!context.mounted) return;
-              final target = state.progressFor(program.id).currentDay;
-              _openDay(context, program, target);
+              _openDay(
+                context,
+                program,
+                state.progressFor(program.id).currentDay,
+              );
             },
+            child: Text(
+              state.hasStarted(program.id) ? 'WEITERMACHEN' : 'PROGRAMM STARTEN',
+            ),
           ),
-          const SizedBox(height: 8),
-          SectionLabel('Phasen'),
+          const SectionLabel('phasen'),
           for (var i = 0; i < program.phases.length; i++)
-            _PhaseSection(
-              program: program,
-              phaseIndex: i,
-              expanded: _expandedPhase == i,
-              color: color,
-              resolver: resolver,
-              completedDays: progress.completedDays,
-              currentDay: progress.currentDay,
-              onToggle: () => setState(
-                () => _expandedPhase = _expandedPhase == i ? -1 : i,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _PhaseBox(
+                program: program,
+                phaseIndex: i,
+                expanded: _expandedPhase == i,
+                color: color,
+                resolver: resolver,
+                completedDays: progress.completedDays,
+                currentDay: progress.currentDay,
+                onToggle: () => setState(
+                  () => _expandedPhase = _expandedPhase == i ? -1 : i,
+                ),
+                onOpenDay: (globalDay) => _openDay(context, program, globalDay),
               ),
-              onOpenDay: (globalDay) => _openDay(context, program, globalDay),
             ),
         ],
       ),
@@ -140,7 +177,7 @@ class _ProgramScreenState extends State<ProgramScreen> {
           ClipboardData(text: state.exportProgram(program.id)),
         );
         messenger.showSnackBar(
-          const SnackBar(content: Text('JSON in der Zwischenablage.')),
+          const SnackBar(content: Text('// JSON IN DER ZWISCHENABLAGE')),
         );
       case 'reset':
         final ok = await _confirm(
@@ -153,7 +190,8 @@ class _ProgramScreenState extends State<ProgramScreen> {
         final ok = await _confirm(
           context,
           'Programm löschen?',
-          'Das Programm verschwindet aus der Bibliothek. Übungen bleiben erhalten.',
+          'Das Programm verschwindet aus der Bibliothek. '
+              'Übungen bleiben erhalten.',
         );
         if (ok) {
           await state.deleteProgram(program.id);
@@ -170,16 +208,16 @@ class _ProgramScreenState extends State<ProgramScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(title),
+        title: Text(title.toUpperCase()),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Abbrechen'),
+            child: const Text('ABBRECHEN'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Ja'),
+            child: const Text('JA'),
           ),
         ],
       ),
@@ -188,83 +226,31 @@ class _ProgramScreenState extends State<ProgramScreen> {
   }
 }
 
-/// Die Begründung des Plans. Bekommt bewusst viel Platz — bei einem
-/// AI-generierten Programm ist das der Teil, der erklärt, warum in Woche 1
-/// noch kein Bach steht.
-class _RationaleCard extends StatelessWidget {
-  const _RationaleCard({required this.text, required this.color});
-
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.09),
-        borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: color, width: 3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.lightbulb_outline, size: 16, color: color),
-              const SizedBox(width: 6),
-              Text(
-                'WARUM DIESER PLAN',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(text, style: const TextStyle(fontSize: 13.5, height: 1.55)),
-        ],
-      ),
-    );
-  }
-}
-
-class _WarningCard extends StatelessWidget {
-  const _WarningCard({required this.problems});
+class _WarningBox extends StatelessWidget {
+  const _WarningBox({required this.problems});
 
   final List<String> problems;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    final p = AppTheme.paletteOf(context);
+    return ZBox(
+      title: 'unvollständiger import',
+      accent: p.error,
+      filled: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Unvollständiger Import',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: scheme.onErrorContainer,
-            ),
-          ),
-          const SizedBox(height: 8),
           for (final problem in problems.take(6))
             Padding(
-              padding: const EdgeInsets.only(bottom: 3),
+              padding: const EdgeInsets.only(bottom: 4),
               child: Text(
-                '• $problem',
+                '· $problem',
                 style: TextStyle(
-                  fontSize: 12.5,
-                  color: scheme.onErrorContainer.withValues(alpha: 0.9),
+                  fontFamily: Metrics.mono,
+                  fontSize: 10.5,
+                  height: 1.5,
+                  color: p.error,
                 ),
               ),
             ),
@@ -272,8 +258,10 @@ class _WarningCard extends StatelessWidget {
             Text(
               '… und ${problems.length - 6} weitere',
               style: TextStyle(
-                fontSize: 12.5,
-                color: scheme.onErrorContainer.withValues(alpha: 0.7),
+                fontFamily: Metrics.mono,
+                fontSize: 10.5,
+                fontStyle: FontStyle.italic,
+                color: p.fgFaint,
               ),
             ),
         ],
@@ -282,8 +270,8 @@ class _WarningCard extends StatelessWidget {
   }
 }
 
-class _PhaseSection extends StatelessWidget {
-  const _PhaseSection({
+class _PhaseBox extends StatelessWidget {
+  const _PhaseBox({
     required this.program,
     required this.phaseIndex,
     required this.expanded,
@@ -308,131 +296,88 @@ class _PhaseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final phase = program.phases[phaseIndex];
-    final scheme = Theme.of(context).colorScheme;
+    final p = AppTheme.paletteOf(context);
     final startDay = resolver.phaseStartDay(program, phaseIndex);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: onToggle,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Text(
-                        '${phaseIndex + 1}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            phase.name,
-                            style: const TextStyle(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${phase.weeks} Wochen · '
-                            '${phase.schedule.cycleLength} Tage/Zyklus',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: scheme.onSurface.withValues(alpha: 0.55),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      expanded ? Icons.expand_less : Icons.expand_more,
-                      color: scheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ],
+    return ZBox(
+      title: '${phaseIndex + 1} · ${phase.name}',
+      trailing: '${phase.weeks}W',
+      accent: color,
+      padding: const EdgeInsets.fromLTRB(13, 20, 13, 13),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (phase.description != null && expanded) ...[
+            Text(
+              phase.description!,
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 10.5,
+                height: 1.65,
+                color: p.fgDim,
+              ),
+            ),
+            const SizedBox(height: 11),
+          ],
+          if (phase.goal != null && expanded) ...[
+            Text(
+              '→ ${phase.goal}',
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 10.5,
+                fontStyle: FontStyle.italic,
+                height: 1.5,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
+          if (expanded)
+            for (var week = 0; week < phase.weeks; week++)
+              _WeekRow(
+                program: program,
+                phaseIndex: phaseIndex,
+                week: week,
+                color: color,
+                resolver: resolver,
+                startDay: startDay + week * phase.schedule.cycleLength,
+                completedDays: completedDays,
+                currentDay: currentDay,
+                onOpenDay: onOpenDay,
+              )
+          else
+            Text(
+              '${phase.weeks} WOCHEN · ${phase.schedule.cycleLength} TAGE/ZYKLUS',
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 9.5,
+                letterSpacing: 1.2,
+                color: p.fgFaint,
+              ),
+            ),
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: onToggle,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Text(
+                expanded ? '[ − ZUKLAPPEN ]' : '[ + WOCHEN ZEIGEN ]',
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 9.5,
+                  letterSpacing: 1.2,
+                  color: p.fgDim,
                 ),
               ),
             ),
-            if (expanded)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (phase.description != null) ...[
-                      Text(
-                        phase.description!,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.45,
-                          color: scheme.onSurface.withValues(alpha: 0.75),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                    if (phase.goal != null) ...[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.flag_outlined, size: 15, color: color),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              phase.goal!,
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontStyle: FontStyle.italic,
-                                color: scheme.onSurface.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                    ],
-                    for (var week = 0; week < phase.weeks; week++)
-                      _WeekRow(
-                        program: program,
-                        phaseIndex: phaseIndex,
-                        week: week,
-                        color: color,
-                        resolver: resolver,
-                        startDay: startDay + week * phase.schedule.cycleLength,
-                        completedDays: completedDays,
-                        currentDay: currentDay,
-                        onOpenDay: onOpenDay,
-                      ),
-                  ],
-                ),
-              ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Eine Woche als Reihe von Tages-Punkten. Kompakt genug, dass eine ganze
-/// Phase auf den Schirm passt.
+/// Eine Woche als Reihe quadratischer Tagesfelder.
 class _WeekRow extends StatelessWidget {
   const _WeekRow({
     required this.program,
@@ -458,34 +403,33 @@ class _WeekRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = AppTheme.paletteOf(context);
     final days = resolver.resolveWeek(program, phaseIndex, week);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 7),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(
-            width: 30,
+            width: 26,
             child: Text(
               'W${week + 1}',
               style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: scheme.onSurface.withValues(alpha: 0.45),
+                fontFamily: Metrics.mono,
+                fontSize: 9,
+                letterSpacing: 0.8,
+                color: p.fgFaint,
               ),
             ),
           ),
           Expanded(
             child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
+              spacing: 5,
+              runSpacing: 5,
               children: [
                 for (var i = 0; i < days.length; i++)
-                  _DayDot(
+                  _DaySquare(
                     day: days[i],
-                    globalDay: startDay + i,
                     color: color,
                     isDone: completedDays.contains(startDay + i),
                     isCurrent: currentDay == startDay + i,
@@ -500,10 +444,9 @@ class _WeekRow extends StatelessWidget {
   }
 }
 
-class _DayDot extends StatelessWidget {
-  const _DayDot({
+class _DaySquare extends StatelessWidget {
+  const _DaySquare({
     required this.day,
-    required this.globalDay,
     required this.color,
     required this.isDone,
     required this.isCurrent,
@@ -511,7 +454,6 @@ class _DayDot extends StatelessWidget {
   });
 
   final ResolvedDay day;
-  final int globalDay;
   final Color color;
   final bool isDone;
   final bool isCurrent;
@@ -519,50 +461,54 @@ class _DayDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = AppTheme.paletteOf(context);
+    final onColor =
+        p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg;
 
-    final Color background;
-    final Color foreground;
+    late final Color background;
+    late final Color foreground;
+    late final Color line;
+
     if (day.isRest) {
-      background = scheme.onSurface.withValues(alpha: 0.05);
-      foreground = scheme.onSurface.withValues(alpha: 0.35);
+      background = Colors.transparent;
+      foreground = p.fgFaint;
+      line = p.border;
     } else if (isDone) {
+      // Erledigt wird invertiert dargestellt — wie der aktive Schalter.
       background = color;
-      foreground = Colors.white;
+      foreground = onColor;
+      line = color;
     } else {
-      background = color.withValues(alpha: 0.16);
+      background = Colors.transparent;
       foreground = color;
+      line = color.withValues(alpha: 0.55);
     }
 
     return Tooltip(
-      message: day.isRest
-          ? 'Pause'
-          : '${day.title} · ${day.items.length} Übungen',
+      message: day.isRest ? 'Pause' : '${day.title} · ${day.items.length} Übungen',
       child: GestureDetector(
         onTap: day.isRest ? null : onTap,
         child: Container(
-          width: 34,
-          height: 34,
+          width: 28,
+          height: 28,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: background,
-            borderRadius: BorderRadius.circular(10),
-            border: isCurrent
-                ? Border.all(color: scheme.onSurface.withValues(alpha: 0.85), width: 2)
-                : null,
+            border: Border.all(
+              color: isCurrent ? p.fg : line,
+              width: isCurrent ? 2 : Metrics.line,
+            ),
           ),
-          child: day.isRest
-              ? Icon(Icons.remove, size: 14, color: foreground)
-              : isDone
-                  ? Icon(Icons.check, size: 16, color: foreground)
-                  : Text(
-                      day.title.characters.first.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: foreground,
-                      ),
-                    ),
+          child: Text(
+            day.isRest ? '·' : day.title.characters.first.toUpperCase(),
+            style: TextStyle(
+              fontFamily: Metrics.mono,
+              fontSize: day.isRest ? 13 : 11,
+              fontWeight: FontWeight.w700,
+              color: foreground,
+              height: 1,
+            ),
+          ),
         ),
       ),
     );

@@ -29,100 +29,113 @@ class DayScreen extends StatelessWidget {
     final day = state.resolver.resolveDay(program, globalDay);
     if (day == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Fertig')),
+        appBar: AppBar(title: const Text('FERTIG')),
         body: const EmptyState(
-          icon: Icons.celebration_outlined,
-          title: 'Programm durch',
+          icon: Icons.check_box_outlined,
+          title: 'programm durch',
           message: 'Alle Tage dieses Programms sind abgearbeitet.',
         ),
       );
     }
 
-    final scheme = Theme.of(context).colorScheme;
-    final color = AppTheme.domainColor(program.domain);
+    final p = AppTheme.paletteOf(context);
+    final color = AppTheme.domainColor(context, program.domain);
     final isDone = state.progressFor(programId).isDayComplete(globalDay);
+    final onColor =
+        p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg;
+
+    final estimate = day.estimatedSeconds > 0
+        ? ' · CA. ${formatDuration(day.estimatedSeconds).toUpperCase()}'
+        : '';
 
     return Scaffold(
-      appBar: AppBar(title: Text(day.title)),
+      appBar: AppBar(
+        title: Text(day.title.toUpperCase()),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: p.border),
+        ),
+      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+        padding: const EdgeInsets.fromLTRB(15, 16, 15, 110),
         children: [
           Text(
-            '${day.phase.name} · ${day.positionLabel}',
+            '${day.phase.name.toUpperCase()} · '
+            '${day.positionLabel.toUpperCase()}',
             style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
+              fontFamily: Metrics.mono,
+              fontSize: 9.5,
+              letterSpacing: 1.4,
               color: color,
             ),
           ),
           if (day.routine?.description != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 11),
             Text(
               day.routine!.description!,
               style: TextStyle(
-                fontSize: 13.5,
-                height: 1.5,
-                color: scheme.onSurface.withValues(alpha: 0.75),
+                fontFamily: Metrics.mono,
+                fontSize: 11,
+                height: 1.65,
+                color: p.fgDim,
               ),
             ),
           ],
           if (day.isRest) ...[
-            const SizedBox(height: 60),
+            const SizedBox(height: 50),
             EmptyState(
-              icon: Icons.nightlight_round,
-              title: day.label ?? 'Pause',
+              icon: Icons.remove,
+              title: day.label ?? 'pause',
               message: 'Heute steht nichts an. Erholung ist Teil des Plans.',
             ),
           ] else ...[
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _Stat(
-                  icon: Icons.list_alt_rounded,
-                  label: '${day.items.length} Übungen',
-                ),
-                const SizedBox(width: 16),
-                if (day.estimatedSeconds > 0)
-                  _Stat(
-                    icon: Icons.schedule_rounded,
-                    label: 'ca. ${formatDuration(day.estimatedSeconds)}',
-                  ),
-                if (isDone) ...[
-                  const SizedBox(width: 16),
-                  _Stat(
-                    icon: Icons.check_circle,
-                    label: 'erledigt',
-                    color: color,
-                  ),
-                ],
-              ],
+            const SizedBox(height: 14),
+            Text(
+              '// ${day.items.length} ÜBUNGEN$estimate'
+              '${isDone ? " · ERLEDIGT" : ""}',
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 9,
+                letterSpacing: 1.3,
+                color: isDone ? color : p.fgFaint,
+              ),
             ),
-            const SizedBox(height: 8),
-            SectionLabel('Ablauf'),
+            const SectionLabel('ablauf'),
             for (var i = 0; i < day.items.length; i++)
-              _ItemRow(
-                item: day.items[i],
-                index: i,
-                color: color,
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _ItemBox(item: day.items[i], index: i, color: color),
               ),
           ],
         ],
       ),
       bottomNavigationBar: day.isRest
           ? null
-          : SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: color),
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: Text(isDone ? 'Nochmal durchgehen' : 'Session starten'),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => PlayerScreen(
-                        programId: programId,
-                        globalDay: globalDay,
+          : Container(
+              decoration: BoxDecoration(
+                color: p.bg,
+                border: Border(
+                  top: BorderSide(color: p.border, width: Metrics.line),
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(15, 12, 15, 14),
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: onColor,
+                    ),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => PlayerScreen(
+                          programId: programId,
+                          globalDay: globalDay,
+                        ),
                       ),
+                    ),
+                    child: Text(
+                      isDone ? 'NOCHMAL DURCHGEHEN' : 'SESSION STARTEN',
                     ),
                   ),
                 ),
@@ -132,33 +145,8 @@ class DayScreen extends StatelessWidget {
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({required this.icon, required this.label, this.color});
-
-  final IconData icon;
-  final String label;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final tint = color ?? scheme.onSurface.withValues(alpha: 0.6);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 15, color: tint),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12.5, color: tint, fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
-}
-
-class _ItemRow extends StatelessWidget {
-  const _ItemRow({
+class _ItemBox extends StatelessWidget {
+  const _ItemBox({
     required this.item,
     required this.index,
     required this.color,
@@ -170,138 +158,82 @@ class _ItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = AppTheme.paletteOf(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Card(
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => ExerciseScreen(exercise: item.exercise),
+    return ZBox(
+      title: (index + 1).toString().padLeft(2, '0'),
+      trailing: item.slot.optional ? 'optional' : null,
+      accent: color,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ExerciseScreen(exercise: item.exercise),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.exercise.name,
+            style: TextStyle(
+              fontFamily: Metrics.mono,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+              color: p.fg,
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 5,
+            children: [
+              for (final set in item.sets)
                 Container(
-                  width: 26,
-                  height: 26,
-                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: scheme.onSurface.withValues(alpha: 0.07),
-                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: color, width: Metrics.line),
                   ),
                   child: Text(
-                    '${index + 1}',
+                    set.describe().toUpperCase(),
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.onSurface.withValues(alpha: 0.6),
+                      fontFamily: Metrics.mono,
+                      fontSize: 9.5,
+                      letterSpacing: 0.8,
+                      color: color,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              item.exercise.name,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          if (item.slot.optional) ...[
-                            const SizedBox(width: 6),
-                            Text(
-                              'optional',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: scheme.onSurface.withValues(alpha: 0.4),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: [
-                          for (final set in item.sets)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.13),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                set.describe(),
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: color,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      if (item.slot.note != null) ...[
-                        const SizedBox(height: 7),
-                        Text(
-                          item.slot.note!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                            color: scheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ],
-                      if (item.slot.progression.describe() != 'gleichbleibend') ...[
-                        const SizedBox(height: 7),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.trending_up_rounded,
-                              size: 13,
-                              color: scheme.onSurface.withValues(alpha: 0.45),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              item.slot.progression.describe(),
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: scheme.onSurface.withValues(alpha: 0.5),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: scheme.onSurface.withValues(alpha: 0.3),
-                ),
-              ],
-            ),
+            ],
           ),
-        ),
+          if (item.slot.note != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              item.slot.note!,
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 10,
+                fontStyle: FontStyle.italic,
+                height: 1.5,
+                color: p.fgFaint,
+              ),
+            ),
+          ],
+          if (item.slot.progression.describe() != 'gleichbleibend') ...[
+            const SizedBox(height: 9),
+            Text(
+              '↗ ${item.slot.progression.describe().toUpperCase()}',
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 9,
+                letterSpacing: 1.1,
+                color: p.fgFaint,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

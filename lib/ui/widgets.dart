@@ -2,7 +2,177 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
-/// Kleines farbiges Label für die Domäne einer Übung oder eines Programms.
+/// Die Box aus ZENTRALE (`.box` + `.bt` + `.bt2` in `monolith.html`).
+///
+/// Scharfkantiger Rahmen aus einer Haarlinie, dessen obere Kante vom Titel
+/// durchstoßen wird — der Titel sitzt *in* der Linie, nicht darüber, und ist
+/// von Box-Drawing-Zeichen eingefasst. Rechts oben kann eine Nebenangabe
+/// stehen. Das ist das prägendste Element der Vorlage.
+class ZBox extends StatelessWidget {
+  const ZBox({
+    super.key,
+    required this.child,
+    this.title,
+    this.trailing,
+    this.accent,
+    this.onTap,
+    this.padding,
+    this.filled = true,
+  });
+
+  final Widget child;
+
+  /// Erscheint eingekerbt in der oberen Kante, in Versalien.
+  final String? title;
+
+  /// Nebenangabe rechts oben, ebenfalls in die Kante gesetzt.
+  final String? trailing;
+
+  /// Farbe des Titels. Ohne Angabe die Leitfarbe der Palette.
+  final Color? accent;
+
+  final VoidCallback? onTap;
+  final EdgeInsets? padding;
+
+  /// Flächen-Füllung. Ohne sie steht die Box nur als Linie auf dem Papier.
+  final bool filled;
+
+  static const _notchInset = 13.0;
+  static const _notchHalf = 8.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppTheme.paletteOf(context);
+    final tone = accent ?? p.accent;
+    final inner = Padding(
+      padding: padding ?? Metrics.boxPadding,
+      child: SizedBox(width: double.infinity, child: child),
+    );
+
+    final Widget box = Material(
+      color: filled ? p.bgAlt : Colors.transparent,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: p.border, width: Metrics.line),
+      ),
+      child: onTap == null ? inner : InkWell(onTap: onTap, child: inner),
+    );
+
+    if (title == null && trailing == null) return box;
+
+    // Der Titel überlappt die Kante zur Hälfte — darum oben Platz freihalten
+    // und mit Clip.none nach außen zeichnen lassen.
+    return Padding(
+      padding: const EdgeInsets.only(top: _notchHalf),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          box,
+          if (title != null)
+            Positioned(
+              top: -_notchHalf,
+              left: _notchInset,
+              child: _Notch(
+                background: p.bg,
+                child: RichText(
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontFamily: Metrics.mono,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: Metrics.trackWider,
+                      height: 1.4,
+                    ),
+                    children: [
+                      TextSpan(text: '┤ ', style: TextStyle(color: p.fgFaint)),
+                      TextSpan(
+                        text: title!.toUpperCase(),
+                        style: TextStyle(color: tone),
+                      ),
+                      TextSpan(text: ' ├', style: TextStyle(color: p.fgFaint)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (trailing != null)
+            Positioned(
+              top: -_notchHalf + 1,
+              right: _notchInset,
+              child: _Notch(
+                background: p.bg,
+                child: Text(
+                  trailing!.toUpperCase(),
+                  style: TextStyle(
+                    fontFamily: Metrics.mono,
+                    fontSize: 9.5,
+                    letterSpacing: 1.4,
+                    height: 1.4,
+                    color: p.fgFaint,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Stanzt die Rahmenlinie durch, damit der Titel darin sitzt.
+class _Notch extends StatelessWidget {
+  const _Notch({required this.child, required this.background});
+
+  final Widget child;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        color: background,
+        padding: const EdgeInsets.symmetric(horizontal: 7),
+        child: child,
+      );
+}
+
+/// Versalien-Label mit Haarlinie dahinter — die Abschnittsmarke der Vorlage.
+class SectionLabel extends StatelessWidget {
+  const SectionLabel(this.text, {super.key, this.trailing, this.prefix = '//'});
+
+  final String text;
+  final Widget? trailing;
+
+  /// Kommentar-Präfix wie `// STDOUT` in ZENTRALE.
+  final String? prefix;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppTheme.paletteOf(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 22, 0, 11),
+      child: Row(
+        children: [
+          Text(
+            prefix == null
+                ? text.toUpperCase()
+                : '$prefix ${text.toUpperCase()}',
+            style: TextStyle(
+              fontFamily: Metrics.mono,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: Metrics.trackWider,
+              color: p.fgFaint,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(child: Container(height: 1, color: p.border)),
+          if (trailing != null) ...[const SizedBox(width: 10), trailing!],
+        ],
+      ),
+    );
+  }
+}
+
+/// Domänen-Marke. Invertiert statt getönt — wie der aktive Schalter in
+/// ZENTRALE (`background: var(--acc); color: var(--bg)`).
 class DomainChip extends StatelessWidget {
   const DomainChip(this.domain, {super.key, this.compact = false});
 
@@ -11,36 +181,37 @@ class DomainChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = AppTheme.domainColor(domain);
+    final p = AppTheme.paletteOf(context);
+    final color = AppTheme.domainColor(context, domain);
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 7 : 9,
-        vertical: compact ? 2 : 4,
+        horizontal: compact ? 5 : 7,
+        vertical: compact ? 1 : 2,
       ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(7),
-      ),
+      color: color,
       child: Text(
-        domain,
+        domain.toUpperCase(),
         style: TextStyle(
-          color: color,
-          fontSize: compact ? 11 : 12,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.2,
+          fontFamily: Metrics.mono,
+          color:
+              p.brightness == Brightness.light ? const Color(0xFFF4ECD6) : p.bg,
+          fontSize: compact ? 9 : 9.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.3,
+          height: 1.5,
         ),
       ),
     );
   }
 }
 
-/// Schlanker Fortschrittsbalken ohne Material-Rahmenwerk.
+/// Balken ohne Rundung, in einer Spur mit Haarlinie.
 class ThinProgressBar extends StatelessWidget {
   const ThinProgressBar({
     super.key,
     required this.value,
     required this.color,
-    this.height = 6,
+    this.height = 5,
   });
 
   /// 0..1
@@ -50,51 +221,22 @@ class ThinProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(height),
-      child: LinearProgressIndicator(
-        value: value.clamp(0.0, 1.0),
-        minHeight: height,
-        backgroundColor: scheme.onSurface.withValues(alpha: 0.08),
-        valueColor: AlwaysStoppedAnimation<Color>(color),
+    final p = AppTheme.paletteOf(context);
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        border: Border.all(color: p.border, width: Metrics.line),
+      ),
+      child: FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: value.clamp(0.0, 1.0),
+        child: Container(color: color),
       ),
     );
   }
 }
 
-/// Abschnittsüberschrift in Listen.
-class SectionLabel extends StatelessWidget {
-  const SectionLabel(this.text, {super.key, this.trailing});
-
-  final String text;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
-      child: Row(
-        children: [
-          Text(
-            text.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.1,
-              color: scheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-          const Spacer(),
-          ?trailing,
-        ],
-      ),
-    );
-  }
-}
-
-/// Leerer Zustand mit Handlungsaufforderung.
+/// Leerer Zustand — kursiv und zurückgenommen wie `.nodata` in ZENTRALE.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -111,23 +253,36 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final p = AppTheme.paletteOf(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 44, color: scheme.onSurface.withValues(alpha: 0.3)),
+            Icon(icon, size: 30, color: p.fgFaint),
             const SizedBox(height: 16),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
+            Text(
+              title.toUpperCase(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: Metrics.trackWider,
+                color: p.fgDim,
+              ),
+            ),
+            const SizedBox(height: 10),
             Text(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: scheme.onSurface.withValues(alpha: 0.6),
-                height: 1.4,
+                fontFamily: Metrics.mono,
+                fontSize: 11.5,
+                fontStyle: FontStyle.italic,
+                height: 1.6,
+                color: p.fgFaint,
               ),
             ),
             if (action != null) ...[const SizedBox(height: 24), action!],

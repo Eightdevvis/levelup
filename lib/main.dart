@@ -41,11 +41,13 @@ class _ProgramsAppState extends State<ProgramsApp> {
     return AppScope(
       state: widget.state,
       child: MaterialApp(
-        title: 'Programs',
+        title: 'LevelUp',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.dark,
+        // Papier als Standard. Die Palette stammt aus ZENTRALE, wo `day` der
+        // Normalfall ist und `night` die Ausnahme.
+        themeMode: ThemeMode.light,
         home: FutureBuilder<void>(
           future: _ready,
           builder: (context, snapshot) {

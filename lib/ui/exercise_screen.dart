@@ -18,7 +18,7 @@ class ExerciseScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = AppTheme.domainColor(exercise.domain);
+    final color = AppTheme.domainColor(context, exercise.domain);
     final image = exercise.primaryImage;
 
     return Scaffold(
@@ -37,7 +37,7 @@ class ExerciseScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
                     color: scheme.onSurface.withValues(alpha: 0.07),
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius: BorderRadius.zero,
                   ),
                   child: Text(
                     tag,
@@ -82,7 +82,7 @@ class ExerciseScreen extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(9),
+                      borderRadius: BorderRadius.zero,
                     ),
                     child: Text(
                       cue,
@@ -180,7 +180,7 @@ class _MediaBox extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.zero,
         child: AspectRatio(aspectRatio: 16 / 10, child: content),
       ),
     );
@@ -239,7 +239,7 @@ class _NumberedLine extends StatelessWidget {
             margin: const EdgeInsets.only(top: 1),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.zero,
             ),
             child: Text(
               '$index',

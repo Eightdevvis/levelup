@@ -87,7 +87,7 @@ class _ImportScreenState extends State<ImportScreen> {
                     hintText: '{ "version": 1, "exercises": [ ... ] }',
                     filled: true,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.zero,
                       borderSide: BorderSide.none,
                     ),
                   ),
@@ -132,9 +132,13 @@ class _ImportScreenState extends State<ImportScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: result.ok
-                    ? scheme.primaryContainer.withValues(alpha: 0.35)
-                    : scheme.errorContainer.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(16),
+                    ? scheme.primaryContainer
+                    : scheme.errorContainer,
+                borderRadius: BorderRadius.zero,
+                border: Border.all(
+                  color: (result.ok ? scheme.primary : scheme.error)
+                      .withValues(alpha: 0.35),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +264,7 @@ class _StepCard extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: scheme.primary.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.zero,
                   ),
                   child: Text(
                     '$step',
