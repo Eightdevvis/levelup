@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Nur für die offene Bibliothek: den Katalog laden. Alles andere
+         (Programme, Fortschritt) liegt lokal, die App läuft ohne Netz. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="programs"
+        android:label="LevelUp"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

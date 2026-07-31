@@ -1,0 +1,230 @@
+{
+  "version": 1,
+  "exercises": [
+    {
+      "id": "g-intervalle",
+      "name": "Intervalle hören",
+      "domain": "gehoerbildung",
+      "summary": "Zwei Töne, Intervall benennen — die Grundeinheit des Hörens.",
+      "instructions": [
+        "Intervall abspielen lassen, nur einmal.",
+        "Benennen, bevor nachgedacht wird.",
+        "Erst danach kontrollieren und ggf. nachsingen."
+      ],
+      "benefits": [
+        "Grundlage für Melodiediktat und Vom-Blatt-Singen."
+      ],
+      "tags": [
+        "gehoer"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 20,
+            "required": 14
+          }
+        }
+      ]
+    },
+    {
+      "id": "g-akkorde",
+      "name": "Akkordqualität hören",
+      "domain": "gehoerbildung",
+      "summary": "Dur, Moll, vermindert, übermäßig unterscheiden.",
+      "instructions": [
+        "Akkord abspielen.",
+        "Qualität benennen.",
+        "Bei Unsicherheit Terz herausgreifen und singen."
+      ],
+      "benefits": [
+        "Macht Harmonik hörbar statt nur lesbar."
+      ],
+      "tags": [
+        "gehoer",
+        "harmonik"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 16,
+            "required": 11
+          }
+        }
+      ]
+    },
+    {
+      "id": "g-melodiediktat",
+      "name": "Melodiediktat",
+      "domain": "gehoerbildung",
+      "summary": "Kurze Melodie hören und notieren.",
+      "instructions": [
+        "Melodie zweimal hören.",
+        "Rhythmus zuerst notieren, dann Tonhöhen.",
+        "Gegen die Vorlage prüfen."
+      ],
+      "benefits": [
+        "Verbindet Gehör und Notation in beide Richtungen."
+      ],
+      "tags": [
+        "gehoer",
+        "notation"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 8,
+            "required": 5
+          }
+        }
+      ]
+    }
+  ],
+  "routines": [
+    {
+      "id": "g-r-taeglich",
+      "name": "Gehör täglich",
+      "description": "Fünfzehn Minuten, jeden Tag dieselbe Abfolge.",
+      "slots": [
+        {
+          "exerciseId": "g-intervalle",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 20,
+                "required": 13
+              }
+            }
+          ],
+          "restSeconds": 20,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 1.0,
+            "everyWeeks": 1,
+            "cap": 19.0
+          }
+        },
+        {
+          "exerciseId": "g-akkorde",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 16,
+                "required": 10
+              }
+            }
+          ],
+          "restSeconds": 20,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 1.0,
+            "everyWeeks": 1,
+            "cap": 15.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "g-r-diktat",
+      "name": "Diktat-Tag",
+      "slots": [
+        {
+          "exerciseId": "g-melodiediktat",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 8,
+                "required": 4
+              }
+            }
+          ],
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 1.0,
+            "everyWeeks": 2,
+            "cap": 7.0
+          }
+        },
+        {
+          "exerciseId": "g-intervalle",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 20,
+                "required": 15
+              }
+            }
+          ],
+          "optional": true
+        }
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "id": "p-gehoer",
+      "name": "Gehörtraining Grundstock",
+      "description": "Acht Wochen tägliches Hören mit langsam steigender Hürde.",
+      "domain": "gehoerbildung",
+      "tags": [
+        "gehoer"
+      ],
+      "phases": [
+        {
+          "id": "g-ph-1",
+          "name": "Tägliche Basis",
+          "weeks": 4,
+          "schedule": {
+            "kind": "everyDay",
+            "routineId": "g-r-taeglich",
+            "daysPerWeek": 7
+          },
+          "description": "Immer dieselbe Liste, jeden Tag.",
+          "goal": "Intervalle 17 von 20."
+        },
+        {
+          "id": "g-ph-2",
+          "name": "Diktat dazu",
+          "weeks": 4,
+          "schedule": {
+            "kind": "cycle",
+            "days": [
+              {
+                "routineId": "g-r-taeglich"
+              },
+              {
+                "routineId": "g-r-diktat"
+              },
+              {
+                "routineId": "g-r-taeglich"
+              },
+              {
+                "routineId": "g-r-diktat"
+              },
+              {
+                "routineId": "g-r-taeglich"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "label": "Pause"
+              }
+            ]
+          },
+          "goal": "Achttaktige Melodie in zwei Durchgängen notieren."
+        }
+      ],
+      "rationale": "Gehör wächst über Häufigkeit, nicht über Dauer. Deshalb kurze tägliche Einheiten und eine Trefferquote, die pro Woche nur um einen Treffer steigt — schnell genug für sichtbaren Fortschritt, langsam genug, dass die Quote erreichbar bleibt."
+    }
+  ]
+}

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import '../data/seed.dart';
 import '../data/storage.dart';
 import '../engine/resolver.dart';
 import '../model/library.dart';
@@ -65,18 +64,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Lädt die mitgelieferten Beispielprogramme nach — für den Fall, dass man
-  /// sich die Struktur ansehen will, ohne selbst einen Plan zu schreiben.
-  Future<ImportResult> loadExamples() async {
-    final bundle = seedBundle();
+  /// Legt ein fertiges Bundle in die Bibliothek — der Weg, über den ein
+  /// Programm aus der offenen Bibliothek hereinkommt.
+  Future<void> installBundle(Bundle bundle) async {
     _snapshot = _snapshot.copyWith(library: _snapshot.library.merge(bundle));
     notifyListeners();
     await _persist();
-    return ImportResult(
-      ok: true,
-      message: '${bundle.programs.length} Beispiele geladen.',
-      importedPrograms: bundle.programs,
-    );
   }
 
   Future<void> _persist() => _store.save(_snapshot);

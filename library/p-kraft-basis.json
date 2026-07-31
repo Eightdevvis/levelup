@@ -1,0 +1,386 @@
+{
+  "version": 1,
+  "exercises": [
+    {
+      "id": "k-kniebeuge",
+      "name": "Kniebeuge",
+      "domain": "kraft",
+      "summary": "Grundübung für Beine und Rumpf.",
+      "instructions": [
+        "Stand etwa schulterbreit, Zehen leicht nach außen.",
+        "Hüfte zurück und runter, Knie folgen der Fußrichtung.",
+        "Bis mindestens parallel, dann kontrolliert hoch."
+      ],
+      "benefits": [
+        "Baut Beinkraft.",
+        "Überträgt auf fast jede andere Bewegung."
+      ],
+      "cues": [
+        "Brust hoch.",
+        "Ferse bleibt am Boden."
+      ],
+      "requirements": [
+        "Langhantel"
+      ],
+      "tags": [
+        "unterkoerper"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "reps",
+            "reps": 8
+          },
+          "load": {
+            "value": 40.0,
+            "unit": "kg"
+          }
+        }
+      ]
+    },
+    {
+      "id": "k-liegestuetz",
+      "name": "Liegestütz",
+      "domain": "kraft",
+      "summary": "Druckbewegung ohne Geräte.",
+      "instructions": [
+        "Hände unter den Schultern, Körper auf einer Linie.",
+        "Ellbogen etwa 45 Grad zum Körper.",
+        "Brust bis knapp über den Boden."
+      ],
+      "benefits": [
+        "Brust, Trizeps, Rumpfspannung."
+      ],
+      "tags": [
+        "oberkoerper"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "reps",
+            "reps": 12
+          }
+        }
+      ]
+    },
+    {
+      "id": "k-plank",
+      "name": "Unterarmstütz",
+      "domain": "kraft",
+      "summary": "Statische Rumpfspannung.",
+      "instructions": [
+        "Unterarme unter den Schultern.",
+        "Becken leicht kippen, Gesäß anspannen.",
+        "Halten, ruhig weiteratmen."
+      ],
+      "benefits": [
+        "Stabiler Rumpf."
+      ],
+      "tags": [
+        "rumpf"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 45
+          }
+        }
+      ]
+    },
+    {
+      "id": "k-klimmzug",
+      "name": "Klimmzug",
+      "domain": "kraft",
+      "summary": "Zug nach oben aus dem Hang.",
+      "instructions": [
+        "Griff etwas breiter als schulterbreit.",
+        "Schulterblätter zuerst nach unten ziehen.",
+        "Hochziehen bis Kinn über der Stange, kontrolliert ablassen."
+      ],
+      "benefits": [
+        "Rücken und Griffkraft."
+      ],
+      "requirements": [
+        "Klimmzugstange"
+      ],
+      "tags": [
+        "oberkoerper"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "reps",
+            "reps": 5
+          }
+        }
+      ]
+    }
+  ],
+  "routines": [
+    {
+      "id": "k-r-a",
+      "name": "Tag A — Drücken",
+      "slots": [
+        {
+          "exerciseId": "k-kniebeuge",
+          "sets": [
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 8
+              },
+              "load": {
+                "value": 40.0,
+                "unit": "kg"
+              }
+            },
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 8
+              },
+              "load": {
+                "value": 40.0,
+                "unit": "kg"
+              }
+            },
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 8
+              },
+              "load": {
+                "value": 40.0,
+                "unit": "kg"
+              }
+            }
+          ],
+          "restSeconds": 120,
+          "progression": {
+            "kind": "linear",
+            "field": "load",
+            "amount": 2.5,
+            "everyWeeks": 1
+          }
+        },
+        {
+          "exerciseId": "k-liegestuetz",
+          "sets": [
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 10
+              }
+            },
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 10
+              }
+            },
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 10
+              }
+            }
+          ],
+          "restSeconds": 90,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 1.0,
+            "everyWeeks": 1,
+            "cap": 20.0
+          }
+        },
+        {
+          "exerciseId": "k-plank",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 45
+              }
+            },
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 45
+              }
+            }
+          ],
+          "restSeconds": 60,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 5.0,
+            "everyWeeks": 1,
+            "cap": 120.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "k-r-b",
+      "name": "Tag B — Ziehen",
+      "slots": [
+        {
+          "exerciseId": "k-klimmzug",
+          "sets": [
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 4
+              }
+            },
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 4
+              }
+            },
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 4
+              }
+            }
+          ],
+          "restSeconds": 150,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 1.0,
+            "everyWeeks": 2,
+            "cap": 10.0
+          }
+        },
+        {
+          "exerciseId": "k-kniebeuge",
+          "sets": [
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 5
+              },
+              "load": {
+                "value": 45.0,
+                "unit": "kg"
+              }
+            },
+            {
+              "target": {
+                "kind": "reps",
+                "reps": 5
+              },
+              "load": {
+                "value": 45.0,
+                "unit": "kg"
+              }
+            }
+          ],
+          "restSeconds": 120,
+          "progression": {
+            "kind": "linear",
+            "field": "load",
+            "amount": 2.5,
+            "everyWeeks": 1
+          }
+        },
+        {
+          "exerciseId": "k-plank",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            }
+          ],
+          "optional": true
+        }
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "id": "p-kraft-basis",
+      "name": "Kraft Grundprogramm",
+      "description": "Acht Wochen A/B-Rotation mit linearer Steigerung, dann Deload.",
+      "domain": "kraft",
+      "tags": [
+        "kraft",
+        "ganzkoerper"
+      ],
+      "phases": [
+        {
+          "id": "k-ph-1",
+          "name": "Aufbau",
+          "weeks": 6,
+          "schedule": {
+            "kind": "cycle",
+            "days": [
+              {
+                "routineId": "k-r-a"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "routineId": "k-r-b"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "routineId": "k-r-a"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "label": "Pause"
+              }
+            ]
+          },
+          "goal": "Kniebeuge 3×8 mit 55 kg."
+        },
+        {
+          "id": "k-ph-2",
+          "name": "Deload",
+          "weeks": 2,
+          "schedule": {
+            "kind": "cycle",
+            "days": [
+              {
+                "routineId": "k-r-b"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "routineId": "k-r-b"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "label": "Pause"
+              }
+            ]
+          },
+          "description": "Weniger Last, gleiche Bewegungen — Erholung ohne Pause."
+        }
+      ],
+      "rationale": "Bewusst der klassische Fall, damit sichtbar wird: dieselbe Struktur, die den Geigenplan trägt, bildet auch ein normales Kraftprogramm ab — inklusive Gewichtssteigerung und Entlastungsphase."
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import '../main.dart';
 import '../model/program.dart';
 import 'exercise_library_screen.dart';
 import 'import_screen.dart';
+import 'open_library_screen.dart';
 import 'program_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -42,8 +43,12 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton(
-                            onPressed: () => state.loadExamples(),
-                            child: const Text('BEISPIELE LADEN'),
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const OpenLibraryScreen(),
+                              ),
+                            ),
+                            child: const Text('OFFENE BIBLIOTHEK'),
                           ),
                         ],
                       ),
@@ -112,6 +117,16 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
+          _ToolButton(
+            icon: Icons.cloud_download_outlined,
+            tooltip: 'Offene Bibliothek',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const OpenLibraryScreen(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 7),
           _ToolButton(
             icon: Icons.grid_view,
             tooltip: 'Übungsbibliothek',

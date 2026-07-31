@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "programs": [
+    {
+      "id": "p-bach-lesen",
+      "name": "Bach lesen lernen",
+      "file": "p-bach-lesen.json",
+      "domain": "geige",
+      "description": "Zwölf Wochen von \"ich kann spielen, aber nicht lesen\" zu \"ich kann mir einen unbekannten Bach-Satz erschließen\".",
+      "author": "Beispielplan",
+      "weeks": 12,
+      "phases": 3,
+      "exercises": 8,
+      "tags": [
+        "notation",
+        "theorie",
+        "bach"
+      ]
+    },
+    {
+      "id": "p-gehoer",
+      "name": "Gehörtraining Grundstock",
+      "file": "p-gehoer.json",
+      "domain": "gehoerbildung",
+      "description": "Acht Wochen tägliches Hören mit langsam steigender Hürde.",
+      "weeks": 8,
+      "phases": 2,
+      "exercises": 3,
+      "tags": [
+        "gehoer"
+      ]
+    },
+    {
+      "id": "p-kraft-basis",
+      "name": "Kraft Grundprogramm",
+      "file": "p-kraft-basis.json",
+      "domain": "kraft",
+      "description": "Acht Wochen A/B-Rotation mit linearer Steigerung, dann Deload.",
+      "weeks": 8,
+      "phases": 2,
+      "exercises": 4,
+      "tags": [
+        "kraft",
+        "ganzkoerper"
+      ]
+    },
+    {
+      "id": "p-zeichnen",
+      "name": "Zeichnen Grundlagen",
+      "file": "p-zeichnen.json",
+      "domain": "zeichnen",
+      "description": "Sechs Wochen Grundlagen mit offenen Aufgaben.",
+      "weeks": 6,
+      "phases": 1,
+      "exercises": 3,
+      "tags": [
+        "zeichnen"
+      ]
+    }
+  ]
+}

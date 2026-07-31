@@ -1,0 +1,196 @@
+{
+  "version": 1,
+  "exercises": [
+    {
+      "id": "z-gesten",
+      "name": "Gestenzeichnen",
+      "domain": "zeichnen",
+      "summary": "Kurze Posen, jeweils 30 bis 60 Sekunden.",
+      "instructions": [
+        "Timer auf 30 Sekunden.",
+        "Nur die Bewegungslinie suchen, keine Kontur.",
+        "Nicht korrigieren, nächste Pose."
+      ],
+      "benefits": [
+        "Lockert die Hand.",
+        "Trainiert Sehen statt Symbolzeichnen."
+      ],
+      "tags": [
+        "grundlagen"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 600
+          }
+        }
+      ]
+    },
+    {
+      "id": "z-wertstudie",
+      "name": "Wertstudie",
+      "domain": "zeichnen",
+      "summary": "Ein Motiv nur in drei Helligkeitsstufen.",
+      "instructions": [
+        "Motiv wählen, Augen zusammenkneifen.",
+        "Nur hell, mittel, dunkel anlegen.",
+        "Keine Details, keine Linien."
+      ],
+      "benefits": [
+        "Baut das Verständnis für Licht vor dem für Form."
+      ],
+      "tags": [
+        "grundlagen",
+        "licht"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "open",
+            "prompt": "eine Studie"
+          }
+        }
+      ]
+    },
+    {
+      "id": "z-perspektive",
+      "name": "Perspektive konstruieren",
+      "domain": "zeichnen",
+      "summary": "Boxen im Raum mit Fluchtpunkten.",
+      "instructions": [
+        "Horizont und zwei Fluchtpunkte setzen.",
+        "Zehn Boxen konstruieren, verschiedene Höhen.",
+        "Kanten sauber zu den Fluchtpunkten ziehen."
+      ],
+      "benefits": [
+        "Macht Raum konstruierbar statt geschätzt."
+      ],
+      "tags": [
+        "konstruktion"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 900
+          }
+        }
+      ]
+    }
+  ],
+  "routines": [
+    {
+      "id": "z-r-warmup",
+      "name": "Warmlaufen + Studie",
+      "slots": [
+        {
+          "exerciseId": "z-gesten",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 600
+              }
+            }
+          ],
+          "restSeconds": 60,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 60.0,
+            "everyWeeks": 1,
+            "cap": 1200.0
+          }
+        },
+        {
+          "exerciseId": "z-wertstudie",
+          "sets": [
+            {
+              "target": {
+                "kind": "open",
+                "prompt": "eine Studie"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "z-r-konstruktion",
+      "name": "Konstruktionstag",
+      "slots": [
+        {
+          "exerciseId": "z-perspektive",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 900
+              }
+            }
+          ],
+          "restSeconds": 60
+        },
+        {
+          "exerciseId": "z-gesten",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 300
+              }
+            }
+          ],
+          "optional": true
+        }
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "id": "p-zeichnen",
+      "name": "Zeichnen Grundlagen",
+      "description": "Sechs Wochen Grundlagen mit offenen Aufgaben.",
+      "domain": "zeichnen",
+      "tags": [
+        "zeichnen"
+      ],
+      "phases": [
+        {
+          "id": "z-ph-1",
+          "name": "Sehen",
+          "weeks": 6,
+          "schedule": {
+            "kind": "cycle",
+            "days": [
+              {
+                "routineId": "z-r-warmup"
+              },
+              {
+                "routineId": "z-r-konstruktion"
+              },
+              {
+                "routineId": "z-r-warmup"
+              },
+              {
+                "label": "Pause"
+              },
+              {
+                "routineId": "z-r-konstruktion"
+              },
+              {
+                "routineId": "z-r-warmup"
+              },
+              {
+                "label": "Pause"
+              }
+            ]
+          },
+          "goal": "Gestenzeichnen 20 Minuten am Stück ohne Korrigieren."
+        }
+      ],
+      "rationale": "Der Beleg, dass auch unmessbare Übungen ins selbe Modell passen: eine Wertstudie hat kein Zielergebnis, nur ein Ergebnis. Der Player hakt sie ab, ohne eine Zahl zu erfinden."
+    }
+  ]
+}

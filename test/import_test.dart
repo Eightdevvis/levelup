@@ -252,14 +252,13 @@ void main() {
       expect(state.isLoading, isFalse);
     });
 
-    test('Beispiele lassen sich nachladen', () async {
+    test('ein Bundle lässt sich nachträglich installieren', () async {
       final state = AppState(Store(MemoryStorageBackend()));
       await state.init();
       expect(state.programs, isEmpty);
 
-      final result = await state.loadExamples();
+      await state.installBundle(seedBundle());
 
-      expect(result.ok, isTrue);
       expect(state.programs, isNotEmpty);
       expect(state.library.program('p-bach-lesen'), isNotNull);
     });
