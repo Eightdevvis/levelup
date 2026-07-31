@@ -76,7 +76,7 @@ class PlanService {
     : _client = client ?? http.Client();
 
   /// Wo die API läuft. Wird beim Ausrollen gesetzt.
-  static const defaultBaseUrl = 'https://levelup-api.workers.dev';
+  static const defaultBaseUrl = 'https://levelup-api.sevendevs.workers.dev';
 
   final String baseUrl;
   final String token;

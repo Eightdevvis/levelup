@@ -1,0 +1,1117 @@
+{
+  "version": 1,
+  "exercises": [
+    {
+      "id": "haltungs-reset",
+      "name": "Haltungs- und Handgelenk-Reset",
+      "domain": "tippen",
+      "summary": "Kurzes Einrichten von Sitz, Bildschirm und Handgelenken vor jeder Übungseinheit, damit die Finger frei aus der Grundstellung arbeiten können.",
+      "instructions": [
+        "Füße flach, Unterarme waagerecht, Ellenbogen etwa 90 Grad.",
+        "Handgelenke schweben, nicht aufgelegt aufdrücken; Schultern einmal locker fallen lassen.",
+        "Hände auf die Grundstellung legen (linke Finger auf A S D F, rechte auf J K L Ö), Daumen locker über der Leertaste.",
+        "Dreimal ruhig atmen und die Auflagepunkte der acht Finger bewusst spüren."
+      ],
+      "benefits": [
+        "verhindert Verspannungen bei täglichem Üben",
+        "sorgt dafür, dass jede Einheit aus derselben Ausgangsposition startet"
+      ],
+      "cues": [
+        "Handgelenke schweben, Finger hängen"
+      ],
+      "requirements": [
+        "Tastatur",
+        "Stuhl mit passender Höhe"
+      ],
+      "tags": [
+        "haltung",
+        "aufwaermen"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 90
+          }
+        }
+      ]
+    },
+    {
+      "id": "grundstellung-tasten-fuehlen",
+      "name": "Grundstellung blind erfühlen",
+      "domain": "tippen",
+      "summary": "Die Hände finden ohne Hinsehen über die Tastmarken auf F und J zurück in die Grundstellung. Reine Tastarbeit, kein Text.",
+      "instructions": [
+        "Hände vom Keyboard nehmen und in den Schoß legen, Blick auf den Bildschirm.",
+        "Hände zurück auf die Tastatur führen und nur über die Rillen auf F und J die Grundstellung finden.",
+        "Zur Kontrolle jeweils asdf jklö einmal tippen, ohne hinzusehen.",
+        "Wiederholen, bis das Zurückfinden ohne Suchbewegung klappt."
+      ],
+      "benefits": [
+        "baut die Rückkehrreflex-Bewegung auf, die das Hinsehen ersetzt",
+        "macht die Grundstellung zum verlässlichen Bezugspunkt aller Tasten"
+      ],
+      "cues": [
+        "F und J sind der Kompass"
+      ],
+      "requirements": [
+        "Tastatur mit Tastmarken",
+        "Tuch oder Abdeckung über den Händen"
+      ],
+      "tags": [
+        "grundstellung",
+        "blind"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 60
+          }
+        },
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 60
+          }
+        }
+      ]
+    },
+    {
+      "id": "heimreihe-blind",
+      "name": "Heimreihe blind treffen",
+      "domain": "tippen",
+      "summary": "Einzelne Buchstaben der Grundreihe werden vorgegeben und blind mit dem zuständigen Finger getippt. Gezählt wird nur, was ohne Hinsehen und ohne Korrektur richtig ist.",
+      "instructions": [
+        "Hände abdecken, Blick ausschließlich auf den Bildschirm.",
+        "Tipptrainer gibt einen Buchstaben aus a s d f g h j k l ö vor.",
+        "Mit dem zuständigen Finger anschlagen, danach sofort zurück in die Grundstellung.",
+        "Jeder Anschlag ist ein Versuch; nur Treffer beim ersten Anschlag zählen."
+      ],
+      "benefits": [
+        "verankert die Finger-Tasten-Zuordnung im Bewegungsgedächtnis",
+        "misst Genauigkeit statt Tempo und macht Fortschritt sichtbar"
+      ],
+      "cues": [
+        "Anschlag, dann heim"
+      ],
+      "requirements": [
+        "Tipptrainer-Software",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "grundstellung",
+        "blind",
+        "genauigkeit"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 30,
+            "required": 26
+          }
+        }
+      ]
+    },
+    {
+      "id": "buchstaben-zufall-blind",
+      "name": "Zufallsbuchstaben-Diktat",
+      "domain": "tippen",
+      "summary": "Zufällig gemischte Buchstaben aus dem bereits gelernten Tastenvorrat werden blind getippt — ohne Wortmuster, das die Finger führen könnte.",
+      "instructions": [
+        "Tastenvorrat im Tipptrainer auf die bereits geübten Reihen einstellen.",
+        "Zufallsfolgen einzeln vorgeben lassen, Hände bleiben abgedeckt.",
+        "Jeden Buchstaben mit dem korrekten Finger anschlagen, keine Rückschau auf die Tastatur.",
+        "Bei einem Fehler nicht korrigieren, sondern weiterlaufen lassen und den Versuch als Fehlversuch zählen."
+      ],
+      "benefits": [
+        "trennt die Fingerzuordnung von Wortgewohnheiten",
+        "deckt genau die Tasten auf, die noch nicht sitzen"
+      ],
+      "cues": [
+        "Keine Muster, nur Zuordnung"
+      ],
+      "requirements": [
+        "Tipptrainer-Software",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "blind",
+        "genauigkeit"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 40,
+            "required": 34
+          }
+        }
+      ]
+    },
+    {
+      "id": "obere-reihe-anbau",
+      "name": "Obere Reihe anbauen",
+      "domain": "tippen",
+      "summary": "Die Tasten q w e r t z u i o p werden als Ausflug aus der Grundstellung geübt: hoch, anschlagen, zurück.",
+      "instructions": [
+        "Grundstellung einnehmen, Hände abgedeckt.",
+        "Vorgegebenen Buchstaben der oberen Reihe mit dem zuständigen Finger anschlagen, die anderen Finger bleiben liegen.",
+        "Sofort in die Grundstellung zurückkehren und über F/J kontrollieren.",
+        "Später Zweierkombinationen aus Grundreihe und oberer Reihe tippen, z. B. 'de', 'ju', 'fr'."
+      ],
+      "benefits": [
+        "erweitert das blinde Tastenfeld ohne die Grundstellung zu verlieren",
+        "trainiert isolierte Fingerstreckung statt Handverschiebung"
+      ],
+      "cues": [
+        "Nur ein Finger reist"
+      ],
+      "requirements": [
+        "Tipptrainer-Software",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "reihen",
+        "blind"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 30,
+            "required": 25
+          }
+        }
+      ]
+    },
+    {
+      "id": "untere-reihe-anbau",
+      "name": "Untere Reihe anbauen",
+      "domain": "tippen",
+      "summary": "Die Tasten y x c v b n m sowie Komma und Punkt werden nach unten aus der Grundstellung erschlossen.",
+      "instructions": [
+        "Grundstellung einnehmen, Hände abgedeckt.",
+        "Vorgegebene Taste der unteren Reihe mit dem zuständigen Finger nach unten anschlagen.",
+        "Handrücken ruhig halten, nur der Finger krümmt sich; danach zurück in die Grundstellung.",
+        "Anschließend Kombinationen wie 'nc', 'vb', 'mü' und 'ich', 'mich', 'nun' tippen."
+      ],
+      "benefits": [
+        "schließt die letzte große Lücke im blinden Tastenbild",
+        "verhindert das typische Abrutschen der ganzen Hand nach unten"
+      ],
+      "cues": [
+        "Krümmen, nicht rutschen"
+      ],
+      "requirements": [
+        "Tipptrainer-Software",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "reihen",
+        "blind"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 30,
+            "required": 25
+          }
+        }
+      ]
+    },
+    {
+      "id": "metronom-wortketten",
+      "name": "Wortketten im Metronomtakt",
+      "domain": "tippen",
+      "summary": "Kurze Wörter werden mit genau einem Anschlag pro Metronomklick getippt. Das Tempo bleibt konstant, egal wie leicht oder schwer das Wort ist.",
+      "instructions": [
+        "Metronom auf das vorgegebene Tempo stellen, ein Klick = ein Anschlag.",
+        "Wortliste aus dem geübten Tastenvorrat blind tippen, Leertaste zählt als Anschlag.",
+        "Bei Fehlern das Tempo nicht erhöhen, sondern die Passage im gleichen Takt wiederholen.",
+        "Fühlt sich das Tempo hetzig an, das Metronom um 6 bpm zurückstellen."
+      ],
+      "benefits": [
+        "erzeugt einen gleichmäßigen Anschlagsrhythmus statt Schubtippen",
+        "macht Tempo steuerbar, statt es dem Zufall zu überlassen"
+      ],
+      "cues": [
+        "Ein Klick, ein Anschlag"
+      ],
+      "requirements": [
+        "Metronom",
+        "Wortliste",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "rhythmus",
+        "tempo"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 240
+          },
+          "load": {
+            "value": 60,
+            "unit": "bpm"
+          }
+        }
+      ]
+    },
+    {
+      "id": "trigramm-drill",
+      "name": "Trigramm-Drill",
+      "domain": "tippen",
+      "summary": "Häufige deutsche Buchstabenfolgen wie sch, ein, der, ung, cht werden als flüssige Einheit trainiert, nicht Buchstabe für Buchstabe.",
+      "instructions": [
+        "Eine Liste von acht bis zehn häufigen Trigrammen bereitlegen.",
+        "Jedes Trigramm dreimal hintereinander blind tippen, dann zum nächsten wechseln.",
+        "Ein Versuch ist ein Trigramm; nur fehlerfrei und ohne Stocken getippte Trigramme zählen.",
+        "Trigramme, die zweimal misslingen, notieren und am Ende noch einmal isoliert üben."
+      ],
+      "benefits": [
+        "bündelt Einzelanschläge zu automatisierten Bewegungsgruppen",
+        "hebt das Tempo, ohne die Genauigkeit zu opfern"
+      ],
+      "cues": [
+        "Silbe als eine Bewegung"
+      ],
+      "requirements": [
+        "Trigramm-Liste",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "flüssigkeit",
+        "genauigkeit"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 24,
+            "required": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "shift-und-satzzeichen",
+      "name": "Shift, Umlaute und Satzzeichen",
+      "domain": "tippen",
+      "summary": "Großbuchstaben mit der gegenüberliegenden Shift-Taste sowie ä ö ü ß, Komma, Punkt und Bindestrich blind treffen.",
+      "instructions": [
+        "Shift immer mit der Hand drücken, die den Buchstaben nicht tippt.",
+        "Vorgegebene Wörter mit Großbuchstaben und Satzzeichen blind tippen, z. B. 'Über', 'Straße', 'Größe, Länge.'",
+        "Kleinen Finger für Shift und ß-Bereich einsetzen, ohne die Hand zu verdrehen.",
+        "Ein Versuch ist ein Wort; nur beim ersten Anlauf korrekte Wörter zählen."
+      ],
+      "benefits": [
+        "macht echte Sätze tippbar, nicht nur Kleinbuchstaben",
+        "trainiert die vernachlässigten kleinen Finger"
+      ],
+      "cues": [
+        "Shift kommt von der anderen Hand"
+      ],
+      "requirements": [
+        "Tipptrainer-Software",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "sonderzeichen",
+        "blind"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 25,
+            "required": 21
+          }
+        }
+      ]
+    },
+    {
+      "id": "zahlenreihe-blind",
+      "name": "Zahlenreihe blind",
+      "domain": "tippen",
+      "summary": "Ziffern der obersten Reihe werden als weite Ausflüge aus der Grundstellung geübt, mit Rückkehrkontrolle über F und J.",
+      "instructions": [
+        "Grundstellung einnehmen, Hände abgedeckt.",
+        "Vorgegebene zwei- bis vierstellige Zahl blind tippen.",
+        "Nach jeder Zahl über die Tastmarken F und J die Grundstellung überprüfen.",
+        "Ein Versuch ist eine Zahl; nur vollständig korrekte Zahlen zählen."
+      ],
+      "benefits": [
+        "schließt die Ziffernreihe an das blinde Tastenbild an",
+        "stabilisiert die Rückkehr nach großen Fingerwegen"
+      ],
+      "cues": [
+        "Weit greifen, sicher heimkommen"
+      ],
+      "requirements": [
+        "Tipptrainer-Software",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "zahlen",
+        "blind"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "quota",
+            "attempts": 20,
+            "required": 16
+          }
+        }
+      ]
+    },
+    {
+      "id": "fliesstext-abschreiben",
+      "name": "Fließtext blind abschreiben",
+      "domain": "tippen",
+      "summary": "Ein zusammenhängender Text wird in ruhigem, gleichmäßigem Tempo blind abgeschrieben — Genauigkeit steht über Geschwindigkeit.",
+      "instructions": [
+        "Text am Bildschirm oder auf einem Ständer neben dem Bildschirm platzieren, Hände abdecken.",
+        "In einem Tempo tippen, bei dem du die nächsten Wörter noch vorauslesen kannst.",
+        "Fehler mit Backspace korrigieren, aber nicht auf die Tastatur schauen.",
+        "Am Ende Fehlerzahl und Zeichen pro Minute notieren."
+      ],
+      "benefits": [
+        "überträgt die Drills in echtes Schreiben mit Wortfluss",
+        "liefert eine wöchentlich vergleichbare Messgröße"
+      ],
+      "cues": [
+        "Augen voraus, Finger folgen"
+      ],
+      "requirements": [
+        "Übungstext",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "anwendung",
+        "ausdauer"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 300
+          }
+        }
+      ]
+    },
+    {
+      "id": "tempo-intervalle",
+      "name": "Tempo-Intervalle",
+      "domain": "tippen",
+      "summary": "Kurze Sprints über dem gewohnten Tempo, jeweils gefolgt von einem langsamen Kontrolldurchgang derselben Passage.",
+      "instructions": [
+        "Kurze, bekannte Passage von etwa fünf Zeilen wählen.",
+        "60 Sekunden bewusst schneller tippen als gewohnt, Fehler in Kauf nehmen.",
+        "Danach dieselbe Passage einmal langsam und fehlerfrei tippen.",
+        "Vier Intervalle; wenn die Fehlerquote im Sprint über etwa 10 Prozent liegt, das Sprinttempo senken."
+      ],
+      "benefits": [
+        "verschiebt die Tempogrenze, ohne die Technik dauerhaft zu ruinieren",
+        "der langsame Durchgang sichert die saubere Bewegung wieder ab"
+      ],
+      "cues": [
+        "Sprint, dann sauber nachfahren"
+      ],
+      "requirements": [
+        "Übungstext",
+        "Timer"
+      ],
+      "tags": [
+        "tempo"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 60
+          },
+          "note": "Sprint 1, danach langsamer Kontrolldurchgang"
+        },
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 60
+          },
+          "note": "Sprint 2"
+        },
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 60
+          },
+          "note": "Sprint 3"
+        },
+        {
+          "target": {
+            "kind": "duration",
+            "seconds": 60
+          },
+          "note": "Sprint 4"
+        }
+      ]
+    },
+    {
+      "id": "fehlerprotokoll",
+      "name": "Fehlerprotokoll und eigener Drill",
+      "domain": "tippen",
+      "summary": "Aus den Fehlern der Woche wird eine eigene kurze Übungsliste gebaut, statt blind weiter alles zu üben.",
+      "instructions": [
+        "Die Fehler der letzten Einheiten durchsehen und die häufigsten Tasten oder Buchstabenpaare heraussuchen.",
+        "Notieren, welcher Finger jeweils beteiligt ist und was schiefgeht (falscher Finger, Handverschiebung, Reihenfolge).",
+        "Daraus eine kurze eigene Wort- oder Trigrammliste schreiben, die genau diese Stellen enthält.",
+        "Die Liste in den kommenden Einheiten als Zusatzdrill verwenden."
+      ],
+      "benefits": [
+        "richtet die Übungszeit auf die tatsächlichen Schwachstellen aus",
+        "macht Fehler zu Material statt zu Frust"
+      ],
+      "cues": [
+        "Fehler sind der Lehrplan"
+      ],
+      "requirements": [
+        "Notizheft"
+      ],
+      "tags": [
+        "reflexion"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "open",
+            "prompt": "Deine fünf häufigsten Fehlertasten mit vermuteter Ursache und eine daraus gebaute Übungsliste"
+          }
+        }
+      ]
+    },
+    {
+      "id": "blind-freischreiben",
+      "name": "Freischreiben ohne Vorlage",
+      "domain": "tippen",
+      "summary": "Eigener Text aus dem Kopf, blind getippt — der Test, ob Tippen und Denken gleichzeitig funktionieren.",
+      "instructions": [
+        "Hände abdecken, Bildschirmfenster mit leerem Dokument öffnen.",
+        "Ein kleines Thema wählen (was du heute gemacht hast, eine Beschreibung deines Zimmers).",
+        "Fortlaufend schreiben, ohne auf die Tastatur zu sehen und ohne zu überarbeiten.",
+        "Danach den Text lesen und die auffälligsten Fehlerstellen im Fehlerprotokoll ergänzen."
+      ],
+      "benefits": [
+        "löst das Tippen vom Abschreiben und macht es alltagstauglich",
+        "zeigt, welche Tasten unter Denklast noch unsicher sind"
+      ],
+      "cues": [
+        "Denken vorn, Finger im Hintergrund"
+      ],
+      "requirements": [
+        "Texteditor",
+        "Abdeckung für die Hände"
+      ],
+      "tags": [
+        "anwendung",
+        "transfer"
+      ],
+      "defaultSets": [
+        {
+          "target": {
+            "kind": "open",
+            "prompt": "Ein zusammenhängender Absatz aus dem Kopf, blind getippt"
+          }
+        }
+      ]
+    }
+  ],
+  "routines": [
+    {
+      "id": "r-fundament",
+      "name": "Fundament: Grundstellung blind",
+      "description": "20 Minuten ausschließlich Grundreihe und Rückkehrreflex. Kein Tempo, keine echten Texte.",
+      "slots": [
+        {
+          "exerciseId": "haltungs-reset",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 90
+              }
+            }
+          ],
+          "restSeconds": 15
+        },
+        {
+          "exerciseId": "grundstellung-tasten-fuehlen",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            },
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            }
+          ],
+          "restSeconds": 20,
+          "note": "Hände wirklich in den Schoß, nicht schummelnd über der Tastatur halten."
+        },
+        {
+          "exerciseId": "heimreihe-blind",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 30,
+                "required": 26
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 1,
+            "everyWeeks": 1,
+            "cap": 29
+          }
+        },
+        {
+          "exerciseId": "buchstaben-zufall-blind",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 40,
+                "required": 33
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "note": "Tastenvorrat nur Grundreihe."
+        },
+        {
+          "exerciseId": "metronom-wortketten",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 240
+              },
+              "load": {
+                "value": 54,
+                "unit": "bpm"
+              }
+            },
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 240
+              },
+              "load": {
+                "value": 54,
+                "unit": "bpm"
+              }
+            }
+          ],
+          "restSeconds": 60,
+          "note": "Nur Wörter aus der Grundreihe, z. B. 'das', 'als', 'alls', 'fall'."
+        }
+      ]
+    },
+    {
+      "id": "r-reihen",
+      "name": "Reihen anbauen",
+      "description": "Obere und untere Reihe werden an die gesicherte Grundstellung angehängt.",
+      "slots": [
+        {
+          "exerciseId": "haltungs-reset",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            }
+          ],
+          "restSeconds": 15
+        },
+        {
+          "exerciseId": "heimreihe-blind",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 20,
+                "required": 19
+              }
+            }
+          ],
+          "restSeconds": 30,
+          "note": "Nur als kurzer Check, dass die Basis noch sitzt."
+        },
+        {
+          "exerciseId": "obere-reihe-anbau",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 30,
+                "required": 25
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 2,
+            "everyWeeks": 1,
+            "cap": 28
+          }
+        },
+        {
+          "exerciseId": "untere-reihe-anbau",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 30,
+                "required": 24
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 2,
+            "everyWeeks": 1,
+            "cap": 28
+          }
+        },
+        {
+          "exerciseId": "metronom-wortketten",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 240
+              },
+              "load": {
+                "value": 60,
+                "unit": "bpm"
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "note": "Jetzt Wörter über alle drei Reihen.",
+          "progression": {
+            "kind": "linear",
+            "field": "load",
+            "amount": 6,
+            "everyWeeks": 1,
+            "cap": 96
+          }
+        },
+        {
+          "exerciseId": "trigramm-drill",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 12,
+                "required": 9
+              }
+            }
+          ],
+          "restSeconds": 30,
+          "optional": true,
+          "note": "Nur wenn nach den Reihen noch Zeit und frische Finger da sind."
+        }
+      ]
+    },
+    {
+      "id": "r-genauigkeit",
+      "name": "Genauigkeit und echter Text",
+      "description": "Sonderzeichen, Buchstabengruppen und erstes zusammenhängendes Schreiben.",
+      "slots": [
+        {
+          "exerciseId": "haltungs-reset",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            }
+          ],
+          "restSeconds": 15
+        },
+        {
+          "exerciseId": "trigramm-drill",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 24,
+                "required": 20
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 2,
+            "everyWeeks": 1,
+            "cap": 23
+          }
+        },
+        {
+          "exerciseId": "shift-und-satzzeichen",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 25,
+                "required": 20
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "progression": {
+            "kind": "linear",
+            "field": "target",
+            "amount": 2,
+            "everyWeeks": 1,
+            "cap": 24
+          }
+        },
+        {
+          "exerciseId": "fliesstext-abschreiben",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 300
+              }
+            },
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 240
+              }
+            }
+          ],
+          "restSeconds": 60,
+          "note": "Erster Durchgang bewusst langsam, zweiter im Wohlfühltempo."
+        }
+      ]
+    },
+    {
+      "id": "r-tempo",
+      "name": "Tempo und Transfer",
+      "description": "Sprints, Zahlen und freies Schreiben — die Technik wird belastbar gemacht.",
+      "slots": [
+        {
+          "exerciseId": "haltungs-reset",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            }
+          ],
+          "restSeconds": 15
+        },
+        {
+          "exerciseId": "tempo-intervalle",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            },
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            },
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            },
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "note": "Zwischen den Sprints jeweils der langsame Kontrolldurchgang."
+        },
+        {
+          "exerciseId": "zahlenreihe-blind",
+          "sets": [
+            {
+              "target": {
+                "kind": "quota",
+                "attempts": 20,
+                "required": 16
+              }
+            }
+          ],
+          "restSeconds": 40
+        },
+        {
+          "exerciseId": "fliesstext-abschreiben",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 300
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "note": "Zeichen pro Minute und Fehlerzahl mitschreiben."
+        },
+        {
+          "exerciseId": "blind-freischreiben",
+          "sets": [
+            {
+              "target": {
+                "kind": "open",
+                "prompt": "Ein Absatz aus dem Kopf zu einem Alltagsthema, blind getippt"
+              }
+            }
+          ],
+          "restSeconds": 0
+        }
+      ]
+    },
+    {
+      "id": "r-kurz-check",
+      "name": "Kurzer Festigungstag",
+      "description": "Zehn ruhige Minuten: Basis prüfen, Fehler auswerten, nichts Neues.",
+      "slots": [
+        {
+          "exerciseId": "haltungs-reset",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            }
+          ],
+          "restSeconds": 15
+        },
+        {
+          "exerciseId": "grundstellung-tasten-fuehlen",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 60
+              }
+            }
+          ],
+          "restSeconds": 20
+        },
+        {
+          "exerciseId": "fliesstext-abschreiben",
+          "sets": [
+            {
+              "target": {
+                "kind": "duration",
+                "seconds": 240
+              }
+            }
+          ],
+          "restSeconds": 45,
+          "note": "Leichter Text, betont langsam und fehlerfrei."
+        },
+        {
+          "exerciseId": "fehlerprotokoll",
+          "sets": [
+            {
+              "target": {
+                "kind": "open",
+                "prompt": "Fünf häufigste Fehlertasten der Woche, Ursache und daraus gebaute Übungsliste"
+              }
+            }
+          ],
+          "restSeconds": 0
+        }
+      ]
+    }
+  ],
+  "programs": [
+    {
+      "id": "zehnfinger-4-wochen",
+      "name": "Zehnfingerschreiben in vier Wochen",
+      "description": "Vier Wochen à 20 Minuten täglich: von der blinden Grundstellung über den Reihenaufbau zu Genauigkeit und Tempo.",
+      "domain": "tippen",
+      "tags": [
+        "tippen",
+        "motorik",
+        "blind",
+        "einsteiger"
+      ],
+      "rationale": "Wer Zehnfingerschreiben lernen will, hält sich meist für zu langsam — aber Langsamkeit ist hier nur das Symptom. Die Ursache liegt eine Ebene tiefer: die Zuordnung Finger↔Taste ist nicht im Bewegungsgedächtnis verankert, deshalb muss das Auge sie jedes Mal auf der Tastatur nachschlagen. Jeder Blick nach unten unterbricht die Bewegung und verhindert genau die Automatisierung, die Tempo erst möglich macht. Deshalb steht am Anfang nicht Geschwindigkeit und nicht einmal Text, sondern die blinde Rückkehr in die Grundstellung über die Tastmarken auf F und J — abgedeckte Hände sind hier Methode, nicht Schikane. Erst wenn dieser Kompass zuverlässig funktioniert, werden obere und untere Reihe als isolierte Fingerausflüge daran angehängt (Woche 2). Tempo wird nicht dem Zufall überlassen, sondern über das Metronom dosiert: ein Klick, ein Anschlag, damit ein gleichmäßiger Rhythmus entsteht statt hektischer Schübe. Woche 3 bündelt Einzelanschläge zu Silbengruppen und bringt Shift, Umlaute und echten Fließtext dazu; erst Woche 4 belastet das Fundament mit Sprints, Zahlen und freiem Schreiben aus dem Kopf. Genauigkeitsziele sind als Quoten formuliert, weil Trefferquote und nicht abgesessene Minuten das Lernsignal ist. Ein kurzer Festigungstag pro Woche mit Fehlerprotokoll sorgt dafür, dass die Übungszeit auf die echten Schwachstellen zielt, und ein Ruhetag verhindert, dass die Finger verkrampfen.",
+      "phases": [
+        {
+          "id": "p1-grundstellung",
+          "name": "Woche 1: Blinde Grundstellung",
+          "weeks": 1,
+          "description": "Nur Grundreihe, abgedeckte Hände, kein Zeitdruck. Das Auge wird vom Tastenfinden entkoppelt.",
+          "goal": "Die Hände finden ohne Hinsehen und ohne Suchen in die Grundstellung; mindestens 26 von 30 Grundreihen-Anschlägen sitzen beim ersten Versuch.",
+          "schedule": {
+            "kind": "cycle",
+            "days": [
+              {
+                "routineId": "r-fundament"
+              },
+              {
+                "routineId": "r-fundament"
+              },
+              {
+                "routineId": "r-fundament"
+              },
+              {
+                "routineId": "r-kurz-check"
+              },
+              {
+                "routineId": "r-fundament"
+              },
+              {
+                "routineId": "r-fundament"
+              },
+              {
+                "label": "Pause"
+              }
+            ]
+          }
+        },
+        {
+          "id": "p2-reihen",
+          "name": "Woche 2: Reihen anbauen",
+          "weeks": 1,
+          "description": "Obere und untere Reihe werden als Fingerausflüge aus der stabilen Grundstellung erschlossen.",
+          "goal": "Alle Buchstaben lassen sich blind treffen, die Hand bleibt dabei über der Grundstellung; Wortketten laufen bei 60 bpm gleichmäßig durch.",
+          "schedule": {
+            "kind": "cycle",
+            "days": [
+              {
+                "routineId": "r-reihen"
+              },
+              {
+                "routineId": "r-reihen"
+              },
+              {
+                "routineId": "r-reihen"
+              },
+              {
+                "routineId": "r-kurz-check"
+              },
+              {
+                "routineId": "r-reihen"
+              },
+              {
+                "routineId": "r-reihen"
+              },
+              {
+                "label": "Pause"
+              }
+            ]
+          }
+        },
+        {
+          "id": "p3-genauigkeit",
+          "name": "Woche 3: Genauigkeit und echter Text",
+          "weeks": 1,
+          "description": "Silbengruppen, Shift, Umlaute und Satzzeichen; erstes zusammenhängendes Abschreiben.",
+          "goal": "Ein einfacher Fließtext lässt sich fünf Minuten blind abschreiben mit weniger als etwa 3 Prozent Fehlern.",
+          "schedule": {
+            "kind": "cycle",
+            "days": [
+              {
+                "routineId": "r-genauigkeit"
+              },
+              {
+                "routineId": "r-genauigkeit"
+              },
+              {
+                "routineId": "r-reihen"
+              },
+              {
+                "routineId": "r-kurz-check"
+              },
+              {
+                "routineId": "r-genauigkeit"
+              },
+              {
+                "routineId": "r-genauigkeit"
+              },
+              {
+                "label": "Pause"
+              }
+            ]
+          }
+        },
+        {
+          "id": "p4-tempo",
+          "name": "Woche 4: Tempo und Transfer",
+          "weeks": 1,
+          "description": "Sprints über dem Wohlfühltempo, Zahlen, freies Schreiben aus dem Kopf.",
+          "goal": "Ein eigener Absatz entsteht blind und ohne Nachdenken über Tasten; das Abschreibtempo ist gegenüber Woche 3 messbar gestiegen, die Fehlerquote nicht.",
+          "schedule": {
+            "kind": "cycle",
+            "days": [
+              {
+                "routineId": "r-tempo"
+              },
+              {
+                "routineId": "r-tempo"
+              },
+              {
+                "routineId": "r-genauigkeit"
+              },
+              {
+                "routineId": "r-kurz-check"
+              },
+              {
+                "routineId": "r-tempo"
+              },
+              {
+                "routineId": "r-tempo"
+              },
+              {
+                "label": "Pause"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
