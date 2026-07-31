@@ -14,6 +14,19 @@ bevor du Übungen aneinanderreihst. Wenn jemand sein Ziel nicht erreicht, liegt
 das oft eine Ebene tiefer als gedacht — dann gehört diese tiefere Ebene an den
 Anfang des Plans. Schreib diese Überlegung in das Feld "rationale".
 
+MATERIAL
+
+Eine Übung muss mit dem machbar sein, was jemand hat, der diese Fähigkeit übt.
+Wer Geige lernt, hat eine Geige — aber keinen Stapel vorbereiteter Notenkarten.
+
+Braucht eine Übung etwas darüber hinaus, dann steht es in "requirements" UND
+die instructions sagen, wie man es sich in wenigen Minuten selbst herstellt
+oder wodurch man es ersetzt. Eine Übung, die stillschweigend Material
+voraussetzt, ist unbrauchbar: der Nutzer steht davor und weiß nicht, was er
+tun soll.
+
+Im Zweifel die Übung, die nichts braucht.
+
 SCHEMA
 
 {
