@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../model/exercise.dart';
 import 'theme.dart';
 
 /// Die Box aus ZENTRALE (`.box` + `.bt` + `.bt2` in `monolith.html`).
@@ -154,6 +155,42 @@ class _Notch extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 7),
     child: child,
   );
+}
+
+/// Das Bild einer Übung, quadratisch — oder nichts.
+///
+/// Bilder kommen nur bei kuratierten oder importierten Übungen vor. Eine AI
+/// kann keine erzeugen, und nach Adressen gefragt erfindet sie welche, die ins
+/// Leere zeigen; deshalb wird sie gar nicht erst danach gefragt. Ohne Bild
+/// liefert dieses Widget nichts statt eines leeren Rahmens.
+class ExerciseThumb extends StatelessWidget {
+  const ExerciseThumb({super.key, required this.exercise, this.size = 46});
+
+  final Exercise exercise;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final bild = exercise.primaryImage;
+    if (bild == null) return const SizedBox.shrink();
+
+    final p = AppTheme.paletteOf(context);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        border: Border.all(color: p.border, width: Metrics.line),
+      ),
+      child: Image.network(
+        bild.uri,
+        fit: BoxFit.cover,
+        // Ein totes Bild darf die Zeile nicht sprengen — dann eben keins.
+        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+        loadingBuilder: (context, child, progress) =>
+            progress == null ? child : const SizedBox.shrink(),
+      ),
+    );
+  }
 }
 
 /// Versalien-Label mit Haarlinie dahinter — die Abschnittsmarke der Vorlage.

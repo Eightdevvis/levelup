@@ -249,70 +249,173 @@ class _PlayerScreenState extends State<PlayerScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(15, 14, 15, 12),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Wo man steht. Das Einzige neben der Übung selbst, das oben
+              // stehen darf.
               Text(
-                item.sets.length > 1
-                    ? 'SATZ ${step.setIndex + 1} VON ${item.sets.length}'
-                    : day.title.toUpperCase(),
+                'ÜBUNG ${step.itemIndex + 1} VON ${day.items.length}'
+                '${item.sets.length > 1 ? " · SATZ ${step.setIndex + 1}/${item.sets.length}" : ""}',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: Metrics.mono,
                   fontSize: 10.5,
                   letterSpacing: 1.6,
-                  color: color,
+                  color: p.fgDim,
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                item.exercise.name,
-                style: TextStyle(
-                  fontFamily: Metrics.mono,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                  letterSpacing: 0.2,
-                  color: p.fg,
-                ),
-              ),
-              if (item.exercise.summary != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                  item.exercise.summary!,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: Metrics.mono,
-                    fontSize: 10.5,
-                    height: 1.6,
-                    color: p.fgDim,
-                  ),
-                ),
-              ],
-              if (set.note != null || item.slot.note != null) ...[
-                const SizedBox(height: 9),
-                Text(
-                  set.note ?? item.slot.note!,
-                  style: TextStyle(
-                    fontFamily: Metrics.mono,
-                    fontSize: 10,
-                    fontStyle: FontStyle.italic,
-                    color: color,
-                  ),
-                ),
-              ],
+
+              // Das Bild trägt die Fläche. Gibt es keins, bleibt sie leer —
+              // besser als sie mit Erklärtext zu füllen, den man während der
+              // Ausführung nicht liest.
               Expanded(
                 child: Center(
-                  child: SingleChildScrollView(
-                    child: _buildTargetArea(set, color),
-                  ),
+                  child: ExerciseThumb(exercise: item.exercise, size: 240),
                 ),
               ),
-              if (item.exercise.cues.isNotEmpty)
-                _CueStrip(cues: item.exercise.cues, color: color),
-              const SizedBox(height: 12),
+
+              // Titel unten mittig, groß und fett — wie in einer Fitness-App.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: Text(
+                      item.exercise.name,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: Metrics.mono,
+                        fontSize: 21,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                        color: p.fg,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Das Fragezeichen am Titel: alles Erklärende liegt
+                  // dahinter, nicht auf dem Bildschirm.
+                  InkWell(
+                    onTap: () => _explain(context, item),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: p.fgDim, width: Metrics.line),
+                        ),
+                        child: Text(
+                          '?',
+                          style: TextStyle(
+                            fontFamily: Metrics.mono,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: p.fgDim,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+              Text(
+                set.describe().toUpperCase(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 11,
+                  letterSpacing: 1.4,
+                  color: p.fgDim,
+                ),
+              ),
+
+              // Nur die Dauer braucht ein Bedienelement — eine Zeit läuft,
+              // ob man hinschaut oder nicht. Alles andere hakt man ab.
+              if (set.target is DurationTarget) ...[
+                const SizedBox(height: 14),
+                _buildTargetArea(set, color),
+              ],
+
+              const SizedBox(height: 16),
               _buildActions(set, color, item),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Was die Übung ist und wofür sie gut ist — hinter dem Fragezeichen.
+  ///
+  /// Während der Ausführung liest das niemand; davor oder bei Unsicherheit
+  /// schon. Deshalb erreichbar, aber nicht sichtbar.
+  Future<void> _explain(BuildContext context, ResolvedItem item) {
+    final p = AppTheme.paletteOf(context);
+    final ex = item.exercise;
+
+    Widget absatz(String text, {bool kursiv = false}) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: Metrics.mono,
+          fontSize: 11.5,
+          height: 1.65,
+          fontStyle: kursiv ? FontStyle.italic : FontStyle.normal,
+          color: p.fgDim,
+        ),
+      ),
+    );
+
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 56),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 14, 15, 4),
+              child: Text(
+                ex.name.toUpperCase(),
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: Metrics.trackWider,
+                  height: 1.4,
+                  color: p.fg,
+                ),
+              ),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
+                children: [
+                  if (ex.summary != null) absatz(ex.summary!),
+                  for (final line in ex.instructions) absatz('— $line'),
+                  if (ex.benefits.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    for (final line in ex.benefits) absatz('↗ $line'),
+                  ],
+                  for (final line in ex.cues) absatz(line, kursiv: true),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 0, 15, 12),
+              child: TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('SCHLIESSEN'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -390,7 +493,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Widget _buildActions(SetSpec set, Color color, ResolvedItem item) {
     final p = AppTheme.paletteOf(context);
     final target = set.target;
-    final quotaReady = target is! QuotaTarget || _attempts > 0;
     final onColor = p.onAccent;
 
     return Column(
@@ -400,15 +502,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
             backgroundColor: color,
             foregroundColor: onColor,
           ),
-          onPressed: quotaReady
-              ? () => _recordAndAdvance(
-                  achieved: switch (target) {
-                    QuotaTarget() => _correct,
-                    RepsTarget() => _achievedReps ?? target.reps,
-                    _ => null,
-                  },
-                )
-              : null,
+          // Früher war "Erledigt" bei Quoten gesperrt, bis jemand am
+          // Trefferzähler geklickt hatte. Den Zähler gibt es nicht mehr — er
+          // stand groß in der Mitte und beantwortete eine Frage, die niemand
+          // gestellt hatte. Ohne ihn muss der Knopf offen sein, sonst ließe
+          // sich eine Quoten-Übung überhaupt nicht abschließen.
+          onPressed: () => _recordAndAdvance(
+            achieved: switch (target) {
+              QuotaTarget() => _correct > 0 ? _correct : null,
+              RepsTarget() => _achievedReps ?? target.reps,
+              _ => null,
+            },
+          ),
           child: Text(_cursor == _steps.length - 1 ? 'FERTIG' : 'ERLEDIGT'),
         ),
         const SizedBox(height: 4),
@@ -846,40 +951,6 @@ class _AnswerButton extends StatelessWidget {
                 letterSpacing: 1.5,
                 color: enabled ? onTone : p.fgFaint,
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CueStrip extends StatelessWidget {
-  const _CueStrip({required this.cues, required this.color});
-
-  final List<String> cues;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 25,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: cues.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 7),
-        itemBuilder: (context, index) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            border: Border.all(color: color, width: Metrics.line),
-          ),
-          child: Text(
-            cues[index].toUpperCase(),
-            style: TextStyle(
-              fontFamily: Metrics.mono,
-              fontSize: 10,
-              letterSpacing: 1.1,
-              color: color,
             ),
           ),
         ),

@@ -144,6 +144,13 @@ class DayScreen extends StatelessWidget {
   }
 }
 
+/// Eine Übung in der Tagesliste.
+///
+/// Titel, Bild wenn es eins gibt, und darunter klein die Wiederholungen. Mehr
+/// nicht — wie in einer Fitness-App. Alles Weitere (wozu die Übung gut ist,
+/// wie man sie ausführt) steht auf dem Übungsbildschirm, den ein Antippen
+/// öffnet. Vorher standen Hinweis und Steigerung mit in der Liste, was sie zu
+/// einer Wand aus Kleingedrucktem machte.
 class _ItemBox extends StatelessWidget {
   const _ItemBox({
     required this.item,
@@ -158,81 +165,70 @@ class _ItemBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = AppTheme.paletteOf(context);
+    final bild = item.exercise.primaryImage;
+    final mass = item.sets.map((s) => s.describe()).join(' · ');
 
-    return ZBox(
-      title: (index + 1).toString().padLeft(2, '0'),
-      trailing: item.slot.optional ? 'optional' : null,
-      accent: color,
+    return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => ExerciseScreen(exercise: item.exercise),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            item.exercise.name,
-            style: TextStyle(
-              fontFamily: Metrics.mono,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              height: 1.35,
-              color: p.fg,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 6,
-            runSpacing: 5,
-            children: [
-              for (final set in item.sets)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: color, width: Metrics.line),
-                  ),
-                  child: Text(
-                    set.describe().toUpperCase(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: p.border, width: Metrics.line)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Ohne Bild kein Platzhalter: ein leerer Rahmen sieht aus wie ein
+            // Fehler. Bei AI-erzeugten Übungen ist der Normalfall "kein Bild".
+            if (bild != null) ...[
+              ExerciseThumb(exercise: item.exercise, size: 46),
+              const SizedBox(width: 12),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.exercise.name,
                     style: TextStyle(
                       fontFamily: Metrics.mono,
-                      fontSize: 10.5,
-                      letterSpacing: 0.8,
-                      color: color,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                      color: p.fg,
                     ),
                   ),
+                  if (mass.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      mass.toUpperCase(),
+                      style: TextStyle(
+                        fontFamily: Metrics.mono,
+                        fontSize: 10.5,
+                        letterSpacing: 1.1,
+                        color: p.fgDim,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (item.slot.optional)
+              Text(
+                'OPTIONAL',
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 10,
+                  letterSpacing: 1.2,
+                  color: p.fgFaint,
                 ),
-            ],
-          ),
-          if (item.slot.note != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              item.slot.note!,
-              style: TextStyle(
-                fontFamily: Metrics.mono,
-                fontSize: 10,
-                fontStyle: FontStyle.italic,
-                height: 1.5,
-                color: p.fgFaint,
               ),
-            ),
           ],
-          if (item.slot.progression.describe() != 'gleichbleibend') ...[
-            const SizedBox(height: 9),
-            Text(
-              '↗ ${item.slot.progression.describe().toUpperCase()}',
-              style: TextStyle(
-                fontFamily: Metrics.mono,
-                fontSize: 10,
-                letterSpacing: 1.1,
-                color: p.fgFaint,
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

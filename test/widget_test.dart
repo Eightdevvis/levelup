@@ -65,15 +65,16 @@ void main() {
     await tester.tap(find.text('SESSION STARTEN'));
     await tester.pumpAndSettle();
 
-    // Player: erster Schritt von zweien, Quoten-Bedienung sichtbar.
-    expect(find.text('01 / 02'), findsOneWidget);
-    expect(find.text('RICHTIG'), findsOneWidget);
-    expect(find.text('DANEBEN'), findsOneWidget);
+    // Player: Übungstitel groß, Position, sonst nichts. Kein Trefferzähler,
+    // keine Merksätze, keine Zusammenfassung — das steht hinter dem
+    // Fragezeichen.
+    expect(find.text('ÜBUNG 1 VON 2'), findsOneWidget);
+    expect(find.text('Intervalle hören'), findsOneWidget);
+    expect(find.text('RICHTIG'), findsNothing);
+    expect(find.text('DANEBEN'), findsNothing);
   });
 
-  testWidgets('Quoten-Übung zählt Treffer und führt zum Abschluss', (
-    tester,
-  ) async {
+  testWidgets('das Fragezeichen erklärt die Übung', (tester) async {
     await _pumpApp(tester);
 
     await tester.tap(find.text('Gehörtraining Grundstock'));
@@ -83,20 +84,36 @@ void main() {
     await tester.tap(find.text('SESSION STARTEN'));
     await tester.pumpAndSettle();
 
-    // "Erledigt" bleibt gesperrt, solange kein Versuch gezählt wurde.
+    await tester.tap(find.text('?'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('SCHLIESSEN'), findsOneWidget);
+
+    await tester.tap(find.text('SCHLIESSEN'));
+    await tester.pumpAndSettle();
+    expect(find.text('SCHLIESSEN'), findsNothing);
+  });
+
+  testWidgets('eine Quoten-Übung lässt sich abhaken', (tester) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Gehörtraining Grundstock'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('PROGRAMM STARTEN'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('SESSION STARTEN'));
+    await tester.pumpAndSettle();
+
+    // Ohne Trefferzähler muss "Erledigt" offen sein — sonst käme man aus
+    // einer Quoten-Übung nicht mehr heraus.
     final erledigt = find.widgetWithText(FilledButton, 'ERLEDIGT');
-    expect(tester.widget<FilledButton>(erledigt).onPressed, isNull);
+    expect(tester.widget<FilledButton>(erledigt).onPressed, isNotNull);
 
-    await tester.tap(find.text('RICHTIG'));
+    await tester.tap(erledigt);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'ERLEDIGT'));
-    await tester.pumpAndSettle();
+    expect(find.text('ÜBUNG 2 VON 2'), findsOneWidget);
 
-    expect(find.text('02 / 02'), findsOneWidget);
-
-    await tester.tap(find.text('RICHTIG'));
-    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'FERTIG'));
     await tester.pumpAndSettle();
 

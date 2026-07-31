@@ -62,21 +62,24 @@ class ExerciseScreen extends StatelessWidget {
             ),
           ],
           if (exercise.instructions.isNotEmpty) ...[
-            SectionLabel('Anleitung'),
+            // Nicht "Anleitung" und nicht nummeriert: eine Übung ist EINE
+            // Sache, und nummerierte Schritte lasen sich wie eine Liste
+            // eigenständiger Aufgaben — genau die Verwechslung, die den
+            // Tagesplan unverständlich gemacht hat.
+            SectionLabel('ausführung'),
             for (var i = 0; i < exercise.instructions.length; i++)
-              _NumberedLine(
-                index: i + 1,
+              _InstructionLine(
                 text: exercise.instructions[i],
                 color: color,
               ),
           ],
           if (exercise.benefits.isNotEmpty) ...[
-            SectionLabel('Wofür das gut ist'),
+            SectionLabel('wofür das gut ist'),
             for (final benefit in exercise.benefits)
               _BulletLine(text: benefit, color: color),
           ],
           if (exercise.cues.isNotEmpty) ...[
-            SectionLabel('Merksätze'),
+            SectionLabel('merksätze'),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -104,7 +107,7 @@ class ExerciseScreen extends StatelessWidget {
             ),
           ],
           if (exercise.requirements.isNotEmpty) ...[
-            SectionLabel('Braucht man'),
+            SectionLabel('braucht man'),
             Text(
               exercise.requirements.join(' · '),
               style: TextStyle(
@@ -114,7 +117,7 @@ class ExerciseScreen extends StatelessWidget {
             ),
           ],
           if (exercise.defaultSets.isNotEmpty) ...[
-            SectionLabel('Standardansatz'),
+            SectionLabel('standardansatz'),
             Text(
               exercise.defaultSets.map((s) => s.describe()).join('  ·  '),
               style: TextStyle(
@@ -124,7 +127,7 @@ class ExerciseScreen extends StatelessWidget {
             ),
           ],
           if (exercise.media.length > 1) ...[
-            SectionLabel('Weitere Medien'),
+            SectionLabel('weitere medien'),
             for (final media in exercise.media.skip(1))
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
@@ -221,14 +224,12 @@ class _MediaBox extends StatelessWidget {
   );
 }
 
-class _NumberedLine extends StatelessWidget {
-  const _NumberedLine({
-    required this.index,
+class _InstructionLine extends StatelessWidget {
+  const _InstructionLine({
     required this.text,
     required this.color,
   });
 
-  final int index;
   final String text;
   final Color color;
 
@@ -239,25 +240,19 @@ class _NumberedLine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 22,
-            height: 22,
-            alignment: Alignment.center,
-            margin: const EdgeInsets.only(top: 1),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.zero,
-            ),
+          // Ein Strich statt einer Nummer. Nummern machen aus Hinweisen zur
+          // Ausführung eine Reihe von Aufgaben, die man einzeln abarbeitet.
+          Padding(
+            padding: const EdgeInsets.only(top: 2, right: 10),
             child: Text(
-              '$index',
+              '—',
               style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
+                fontFamily: Metrics.mono,
+                fontSize: 12,
                 color: color,
               ),
             ),
           ),
-          const SizedBox(width: 11),
           Expanded(
             child: Text(
               text,
