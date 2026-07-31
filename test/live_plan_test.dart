@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:programs/engine/resolver.dart';
 import 'package:programs/model/library.dart';
+import 'package:programs/model/patch.dart';
 import 'package:programs/model/target.dart';
 
 /// Ein Plan, wie ihn der Server wirklich ausgegeben hat — nicht ausgedacht,
@@ -14,6 +15,8 @@ import 'package:programs/model/target.dart';
 /// mir vorgestellt habe. Dieses hier prüft, ob er zu dem passt, was tatsächlich
 /// ankommt.
 void main() {
+  _patchTests();
+
   late Bundle bundle;
 
   setUpAll(() {
@@ -64,5 +67,23 @@ void main() {
     // Genau das kann eine Workout-App nicht: eine Trefferquote und eine
     // offene Aufgabe im selben Plan.
     expect(ziele, containsAll(['quota', 'open']));
+  });
+}
+
+/// Derselbe Gedanke für die Überarbeitung: der Patch stammt aus einem echten
+/// Lauf gegen `/v1/revise`. Er prüft den Vertrag zwischen dem, was der Server
+/// schreibt, und dem, was die App lesen kann — die Stelle, an der ein
+/// umbenanntes Feld sonst still zu "nichts passiert" würde.
+void _patchTests() {
+  test('echter Patch vom Server wird vollständig gelesen', () {
+    final raw = File('test/fixtures/live_patch.json').readAsStringSync();
+    final patch = PlanPatch.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+
+    final roh = (jsonDecode(raw) as Map<String, dynamic>)['operations'] as List;
+    // Keine Operation darf beim Lesen unter den Tisch fallen.
+    expect(patch.operations, hasLength(roh.length));
+    expect(patch.personalNote, isNotNull);
+    expect(patch.operations.whereType<RemoveExercise>(), isNotEmpty);
+    expect(patch.operations.whereType<SetPhaseWeeks>(), isNotEmpty);
   });
 }

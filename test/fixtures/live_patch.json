@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "personalNote": "Das Fehlerprotokoll ist aus dem Festigungstag raus — der Tag endet jetzt mit dem Abschreib-Block. Die erste Phase läuft zwei Wochen statt einer, du hast also doppelt so lange nur Grundreihe, bevor die anderen Reihen dazukommen. Damit dauert der Plan insgesamt vier Wochen; Name und Beschreibung habe ich entsprechend angepasst. Alles andere bleibt unverändert.",
+  "exercises": [],
+  "operations": [
+    {
+      "op": "removeExercise",
+      "exerciseId": "fehlerprotokoll",
+      "routineId": "r-festigung-check"
+    },
+    {
+      "op": "setPhaseWeeks",
+      "phaseId": "p1-grundstellung",
+      "weeks": 2
+    },
+    {
+      "op": "setProgramText",
+      "field": "name",
+      "text": "Umstieg aufs blinde Zehnfingersystem in vier Wochen"
+    },
+    {
+      "op": "setProgramText",
+      "field": "description",
+      "text": "Vier Wochen à 25 Minuten täglich für den Wechsel von einem eingeübten Suchsystem zum blinden Zehnfingerschreiben: zwei Wochen Grundstellung, dann Reihenaufbau und Transfer in echte Schreibarbeit."
+    },
+    {
+      "op": "setPhaseText",
+      "phaseId": "p1-grundstellung",
+      "field": "name",
+      "text": "Woche 1–2: Blinde Grundstellung"
+    }
+  ]
+}
