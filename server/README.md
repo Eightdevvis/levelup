@@ -46,7 +46,7 @@ npx wrangler d1 create levelup      # gibt eine database_id aus
 ```
 
 Die ausgegebene `database_id` in `wrangler.jsonc` eintragen — sie steht dort
-noch als `PLATZHALTER_WRANGLER_D1_CREATE`.
+noch als Platzhalter.
 
 ```bash
 npx wrangler d1 execute levelup --remote --file=schema.sql
