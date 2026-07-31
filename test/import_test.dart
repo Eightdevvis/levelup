@@ -52,7 +52,7 @@ const _minimalPlan = '''
 ''';
 
 Future<AppState> _freshState() async {
-  final state = AppState(Store(MemoryStorageBackend()));
+  final state = AppState(Store(MemoryStorageBackend()), seed: seedBundle());
   await state.init();
   return state;
 }
@@ -148,7 +148,10 @@ void main() {
       final source = await _freshState();
       final exported = source.exportProgram('p-bach-lesen');
 
-      final target = AppState(Store(MemoryStorageBackend()));
+      final target = AppState(
+        Store(MemoryStorageBackend()),
+        seed: seedBundle(),
+      );
       await target.init();
       final result = await target.importJson(exported);
 
@@ -191,7 +194,7 @@ void main() {
   group('Fortschritt', () {
     test('Tag abschließen rückt den Zeiger vor und wird gespeichert', () async {
       final backend = MemoryStorageBackend();
-      final state = AppState(Store(backend));
+      final state = AppState(Store(backend), seed: seedBundle());
       await state.init();
 
       await state.startProgram('p-gehoer');
@@ -203,7 +206,7 @@ void main() {
       expect(state.sessions, hasLength(1));
 
       // Neu geladen aus demselben Speicher — der Fortschritt muss überleben.
-      final reloaded = AppState(Store(backend));
+      final reloaded = AppState(Store(backend), seed: seedBundle());
       await reloaded.init();
       expect(reloaded.progressFor('p-gehoer').currentDay, 1);
       expect(reloaded.sessions, hasLength(1));
@@ -240,6 +243,27 @@ void main() {
   });
 
   group('Startzustand', () {
+    test('ohne seed bleibt die Bibliothek leer — so startet die App', () async {
+      final state = AppState(Store(MemoryStorageBackend()));
+      await state.init();
+
+      expect(state.library.isEmpty, isTrue);
+      expect(state.programs, isEmpty);
+      expect(state.isLoading, isFalse);
+    });
+
+    test('Beispiele lassen sich nachladen', () async {
+      final state = AppState(Store(MemoryStorageBackend()));
+      await state.init();
+      expect(state.programs, isEmpty);
+
+      final result = await state.loadExamples();
+
+      expect(result.ok, isTrue);
+      expect(state.programs, isNotEmpty);
+      expect(state.library.program('p-bach-lesen'), isNotNull);
+    });
+
     test('erste Nutzung füllt die Bibliothek mit den Seed-Inhalten', () async {
       final state = await _freshState();
       expect(state.library.programs, isNotEmpty);
@@ -248,11 +272,11 @@ void main() {
 
     test('vorhandener Speicher wird nicht mit Seeds überschrieben', () async {
       final backend = MemoryStorageBackend();
-      final first = AppState(Store(backend));
+      final first = AppState(Store(backend), seed: seedBundle());
       await first.init();
       await first.deleteProgram('p-gehoer');
 
-      final second = AppState(Store(backend));
+      final second = AppState(Store(backend), seed: seedBundle());
       await second.init();
       expect(second.library.program('p-gehoer'), isNull);
     });

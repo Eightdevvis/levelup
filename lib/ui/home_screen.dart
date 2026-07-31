@@ -30,13 +30,22 @@ class HomeScreen extends StatelessWidget {
                       message:
                           'Lass dir von einer AI einen Plan bauen '
                           'und füge ihn hier ein.',
-                      action: OutlinedButton(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const ImportScreen(),
+                      action: Column(
+                        children: [
+                          FilledButton(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const ImportScreen(),
+                              ),
+                            ),
+                            child: const Text('PLAN IMPORTIEREN'),
                           ),
-                        ),
-                        child: const Text('PLAN IMPORTIEREN'),
+                          const SizedBox(height: 8),
+                          OutlinedButton(
+                            onPressed: () => state.loadExamples(),
+                            child: const Text('BEISPIELE LADEN'),
+                          ),
+                        ],
                       ),
                     )
                   : ListView.separated(

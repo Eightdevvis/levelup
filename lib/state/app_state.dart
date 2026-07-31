@@ -29,9 +29,13 @@ class ImportResult {
 /// Zentraler Zustand. Bewusst ein einzelner ChangeNotifier statt einer
 /// State-Management-Bibliothek — die App hat einen Datenstamm, nicht zehn.
 class AppState extends ChangeNotifier {
-  AppState(this._store);
+  /// [seed] füllt die Bibliothek beim allerersten Start. In der App bleibt es
+  /// leer — wer sie installiert, soll seinen eigenen Plan importieren und nicht
+  /// fremde Programme vorfinden. Die Tests reichen bewusst Beispiele herein.
+  AppState(this._store, {this.seed});
 
   final Store _store;
+  final Bundle? seed;
 
   AppSnapshot _snapshot = const AppSnapshot();
   bool _loading = true;
@@ -51,14 +55,28 @@ class AppState extends ChangeNotifier {
 
   Future<void> init() async {
     final loaded = await _store.load();
-    if (loaded == null || loaded.library.isEmpty) {
-      _snapshot = AppSnapshot(library: const Library().merge(seedBundle()));
-      await _persist();
-    } else {
+    if (loaded != null) {
       _snapshot = loaded;
+    } else if (seed != null) {
+      _snapshot = AppSnapshot(library: const Library().merge(seed!));
+      await _persist();
     }
     _loading = false;
     notifyListeners();
+  }
+
+  /// Lädt die mitgelieferten Beispielprogramme nach — für den Fall, dass man
+  /// sich die Struktur ansehen will, ohne selbst einen Plan zu schreiben.
+  Future<ImportResult> loadExamples() async {
+    final bundle = seedBundle();
+    _snapshot = _snapshot.copyWith(library: _snapshot.library.merge(bundle));
+    notifyListeners();
+    await _persist();
+    return ImportResult(
+      ok: true,
+      message: '${bundle.programs.length} Beispiele geladen.',
+      importedPrograms: bundle.programs,
+    );
   }
 
   Future<void> _persist() => _store.save(_snapshot);

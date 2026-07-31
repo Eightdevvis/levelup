@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:programs/data/seed.dart';
 import 'package:programs/data/storage.dart';
 import 'package:programs/main.dart';
 import 'package:programs/state/app_state.dart';
 
 Future<void> _pumpApp(WidgetTester tester) async {
-  final state = AppState(Store(MemoryStorageBackend()));
+  final state = AppState(Store(MemoryStorageBackend()), seed: seedBundle());
   await tester.pumpWidget(ProgramsApp(state: state));
   await tester.pumpAndSettle();
 }
