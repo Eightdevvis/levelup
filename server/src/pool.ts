@@ -126,6 +126,32 @@ export async function searchPrograms(
   return result.results ?? [];
 }
 
+/**
+ * Der Katalog für die offene Bibliothek in der App.
+ *
+ * Zählwerte kommen über JSON1 direkt aus dem gespeicherten Bundle, statt sie
+ * als eigene Spalten zu führen — sonst müssten sie beim Schreiben gepflegt und
+ * bei jeder Schemaänderung nachgezogen werden.
+ */
+export async function listPrograms(
+  env: Env,
+  limit = 100,
+): Promise<Record<string, unknown>[]> {
+  const result = await env.DB.prepare(
+    `SELECT id, name, domain, description, weeks, used_count,
+            COALESCE(json_array_length(json, '$.exercises'), 0) AS exercises,
+            COALESCE(json_array_length(json, '$.programs[0].phases'), 0)
+              AS phases
+       FROM pool_programs
+      ORDER BY used_count DESC, created_at DESC
+      LIMIT ?`,
+  )
+    .bind(limit)
+    .all<Record<string, unknown>>();
+
+  return result.results ?? [];
+}
+
 /** Das vollständige Bundle eines Plans, zum Übernehmen und Anpassen. */
 export async function loadProgram(
   env: Env,

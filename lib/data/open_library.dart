@@ -3,13 +3,18 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../model/library.dart';
+import 'plan_service.dart';
 
 /// Wo der gemeinsame Katalog liegt.
 ///
-/// Bewusst eine rohe Datei im Repo statt eines Servers: nichts zu betreiben,
-/// nichts das ausfällt, und ein neuer Plan kommt per Pull Request dazu.
-const String kOpenLibraryBase =
-    'https://raw.githubusercontent.com/Eightdevvis/levelup/main/library';
+/// Früher eine rohe Datei im Repo. Das war einfach zu betreiben, aber der
+/// Katalog konnte nur wachsen, wenn jemand von Hand etwas hineinschrieb — und
+/// er zeigte damit etwas anderes als das, woraus die AI ihre Pläne baut.
+///
+/// Jetzt derselbe Pool: was jemand annimmt, steht hier. Die Bibliothek
+/// aktualisiert sich dadurch über das Netz, ohne dass die App neu ausgeliefert
+/// werden muss.
+const String kOpenLibraryBase = '${PlanService.defaultBaseUrl}/v1/library';
 
 /// Ein Eintrag im Katalog — nur so viel, wie die Liste braucht.
 ///
@@ -20,7 +25,7 @@ class CatalogEntry {
   const CatalogEntry({
     required this.id,
     required this.name,
-    required this.file,
+    this.file = '',
     this.domain = 'allgemein',
     this.description,
     this.author,
@@ -33,7 +38,8 @@ class CatalogEntry {
   final String id;
   final String name;
 
-  /// Dateiname relativ zum Katalog.
+  /// Nur noch für alte Kataloge aus einer Datei. Der Server adressiert über
+  /// [id].
   final String file;
 
   final String domain;
@@ -47,7 +53,7 @@ class CatalogEntry {
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'file': file,
+    if (file.isNotEmpty) 'file': file,
     'domain': domain,
     if (description != null) 'description': description,
     if (author != null) 'author': author,
@@ -60,7 +66,8 @@ class CatalogEntry {
   static CatalogEntry fromJson(Map<String, dynamic> json) => CatalogEntry(
     id: json['id'] as String,
     name: json['name'] as String,
-    file: json['file'] as String,
+    // Der Server liefert kein Dateifeld mehr — geholt wird über die Kennung.
+    file: json['file'] as String? ?? '',
     domain: json['domain'] as String? ?? 'allgemein',
     description: json['description'] as String?,
     author: json['author'] as String?,
@@ -92,7 +99,7 @@ class OpenLibraryClient {
   final String base;
 
   Future<List<CatalogEntry>> fetchCatalog() async {
-    final body = await _get('$base/index.json');
+    final body = await _get(base);
     final decoded = jsonDecode(body);
 
     // Sowohl eine nackte Liste als auch ein Objekt mit "programs" annehmen —
@@ -109,7 +116,11 @@ class OpenLibraryClient {
 
   /// Lädt das vollständige Bundle zu einem Katalogeintrag.
   Future<Bundle> fetchBundle(CatalogEntry entry) async {
-    final body = await _get('$base/${entry.file}');
+    // Über die Kennung, nicht über einen Dateinamen: der Pool kennt keine
+    // Dateien. Ein alter Katalog aus einer Datei funktioniert weiter.
+    final body = await _get(
+      entry.file.isEmpty ? '$base/${entry.id}' : '$base/${entry.file}',
+    );
     final decoded = jsonDecode(body);
     if (decoded is! Map<String, dynamic>) {
       throw const OpenLibraryException('Der Plan hat kein gültiges Format.');

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:programs/data/seed.dart';
+import 'support/seed.dart';
 import 'package:programs/data/storage.dart';
 import 'package:programs/main.dart';
 import 'package:programs/state/app_state.dart';

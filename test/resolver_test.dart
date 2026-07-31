@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:programs/data/seed.dart';
+import 'support/seed.dart';
 import 'package:programs/engine/resolver.dart';
 import 'package:programs/model/exercise.dart';
 import 'package:programs/model/library.dart';

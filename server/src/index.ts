@@ -1,7 +1,7 @@
 import { run, UpstreamError, type AgentEvent, type Usage } from './agent';
 import { PLAN_SYSTEM_PROMPT } from './plan_prompt';
 import { REVISE_SYSTEM_PROMPT } from './revise_prompt';
-import { storeExercises, storeProgram } from './pool';
+import { listPrograms, loadProgram, storeExercises, storeProgram } from './pool';
 
 /**
  * LevelUp-API.
@@ -527,6 +527,29 @@ async function accept(
   }
 }
 
+// --- Offene Bibliothek ------------------------------------------------------
+
+/**
+ * Lesend und ohne Anmeldung.
+ *
+ * Stöbern soll niemanden zwingen, sich vorher zu registrieren — und was hier
+ * steht, ist ohnehin das, was Leute ausdrücklich zum Teilen freigegeben haben.
+ */
+async function library(url: URL, env: Env): Promise<Response> {
+  const id = url.pathname.slice('/v1/library/'.length);
+
+  if (id.length === 0) {
+    const programs = await listPrograms(env);
+    // Dieselbe Hülle wie der frühere statische Katalog, damit ältere
+    // App-Versionen nicht daran ersticken.
+    return json({ version: 1, programs });
+  }
+
+  const bundle = await loadProgram(env, id);
+  if (bundle === null) return fail('Kein Plan mit dieser Kennung.', 404, 'not_found');
+  return json(bundle);
+}
+
 // --- Einstieg --------------------------------------------------------------
 
 export default {
@@ -540,6 +563,13 @@ export default {
     try {
       if (url.pathname === '/v1/devices' && request.method === 'POST') {
         return await registerDevice(request, env);
+      }
+
+      if (url.pathname.startsWith('/v1/library')) {
+        if (request.method !== 'GET') {
+          return fail('Nur GET.', 405, 'method_not_allowed');
+        }
+        return await library(url, env);
       }
 
       const routes = ['/v1/me', '/v1/generate', '/v1/revise', '/v1/plans/accept'];

@@ -40,6 +40,19 @@ zusammengeklaubter Plan aus lauter Fundstücken ist schlechter als ein
 selbstgeschriebener, auch wenn er weniger Arbeit war. Wiederverwendung ist
 Beiwerk, kein Ziel. Im Zweifel schreibst du selbst.
 
+MATERIAL
+
+Eine Übung muss mit dem machbar sein, was jemand hat, der diese Fähigkeit übt.
+Wer Geige lernt, hat eine Geige — aber keinen Stapel vorbereiteter Notenkarten.
+
+Braucht eine Übung etwas darüber hinaus, dann steht es in "requirements" UND
+die instructions sagen, wie man es sich in wenigen Minuten selbst herstellt
+oder wodurch man es ersetzt. Eine Übung, die stillschweigend Material
+voraussetzt, ist unbrauchbar: der Nutzer steht davor und weiß nicht, was er
+tun soll.
+
+Im Zweifel die Übung, die nichts braucht.
+
 ÖFFENTLICH UND PERSÖNLICH
 
 Alles im Bundle ist öffentlich. Es landet in der geteilten Bibliothek und

@@ -1,9 +1,17 @@
-import '../model/exercise.dart';
-import '../model/library.dart';
-import '../model/program.dart';
-import '../model/progression.dart';
-import '../model/set_spec.dart';
-import '../model/target.dart';
+// Testkulisse — KEIN Inhalt der App.
+//
+// Das waren einmal die mitgelieferten Beispielprogramme und zugleich die
+// "offene Bibliothek" auf GitHub. Beides ist weg: die Übungen waren von Hand
+// erfunden und teils unbrauchbar ("Notenkarten auf Zeit" setzte einen Stapel
+// Notenkarten voraus, ohne zu sagen woher). Was hier steht, dient nur noch
+// dazu, den Tests etwas zum Anfassen zu geben, und wird nirgends ausgeliefert.
+
+import 'package:programs/model/exercise.dart';
+import 'package:programs/model/library.dart';
+import 'package:programs/model/program.dart';
+import 'package:programs/model/progression.dart';
+import 'package:programs/model/set_spec.dart';
+import 'package:programs/model/target.dart';
 
 /// Startinhalte.
 ///
