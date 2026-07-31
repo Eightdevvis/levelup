@@ -54,16 +54,10 @@ Wer den Server betreibt, ist Verantwortlicher im Sinne der DSGVO. Offen:
   Teil entfernt wird: die Frage, ob jemand seinen Beitrag zurückziehen kann,
   gehört beantwortet, bevor sie gestellt wird.
 
-### 4. Zwei Bibliotheken, die nichts voneinander wissen
+### 4. ~~Zwei Bibliotheken, die nichts voneinander wissen~~ — erledigt
 
-`lib/data/open_library.dart` lädt weiter einen statischen Katalog von
-GitHub raw. Der Server hat inzwischen einen eigenen, lebenden Pool
-(`pool_exercises`, `pool_programs`). Zwei „offene Bibliotheken", die
-auseinanderlaufen — der Knopf in der App zeigt nicht das, woraus die AI schöpft.
-
-Zu entscheiden: entweder der Knopf liest künftig den Server-Pool (dann braucht
-es einen Lese-Endpunkt), oder der GitHub-Katalog fliegt raus. Das Erste ist
-richtig, weil der Pool durch Nutzung wächst und der Katalog nicht.
+Die App liest jetzt `GET /v1/library`, also denselben Pool, aus dem die AI
+schöpft. Der statische Katalog auf GitHub ist weg.
 
 ---
 
@@ -135,12 +129,16 @@ einem echten Plan 25 Beanstandungen, darunter "Tastatur" bei einer Tipp-Übung.
 Ein Prüfer mit überwiegend Fehlalarmen ist schlechter als keiner. Die Prüfung
 deckt jetzt nur noch Eindeutiges ab; Material bleibt reine Prompt-Regel.
 
-### 11. Zwei Prompts, die auseinanderlaufen können
+### 11. Zwei Prompts, die auseinanderlaufen können — teilweise erledigt
 
 `server/src/plan_prompt.ts` ist der verbindliche. `lib/data/ai_prompt.dart` ist
 die Fassung für Kopieren und Einfügen und kennt weder Werkzeuge noch Pool. Das
-ist so gewollt, aber das Schema darin muss mitwandern, wenn sich das Datenmodell
-ändert. Es gibt nichts, das das prüft.
+ist so gewollt.
+
+`test/prompt_drift_test.dart` prüft inzwischen, dass die gemeinsamen Regeln in
+beiden stehen — wörtliche Bruchstücke, damit eine Umformulierung auffällt.
+Ungeprüft bleibt das Schema selbst: ändert sich das Datenmodell, muss es in
+beiden Fassungen nachgezogen werden.
 
 ### 12. Was passiert, wenn die AI aufgibt
 
