@@ -61,63 +61,80 @@ class ZBox extends StatelessWidget {
 
     // Der Titel überlappt die Kante zur Hälfte — darum oben Platz freihalten
     // und mit Clip.none nach außen zeichnen lassen.
+    //
+    // Titel und Beiwert sitzen in einer gemeinsamen Reihe statt in zwei
+    // freistehenden Positionen. Nur so kennt der Titel seine verfügbare Breite:
+    // ohne Begrenzung wurde ein langer Titel am Kastenrand abgeschnitten und
+    // lief vorher unter den Beiwert. Jetzt bricht er um.
     return Padding(
       padding: const EdgeInsets.only(top: _notchHalf),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           box,
-          if (title != null)
-            Positioned(
-              top: -_notchHalf,
-              left: _notchInset,
-              child: _Notch(
-                background: p.bg,
-                child: RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontFamily: Metrics.mono,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: Metrics.trackWider,
-                      height: 1.4,
+          Positioned(
+            top: -_notchHalf,
+            left: _notchInset,
+            right: _notchInset,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (title == null)
+                  const SizedBox.shrink()
+                else
+                  Flexible(
+                    child: _Notch(
+                      background: p.bg,
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                            fontFamily: Metrics.mono,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: Metrics.trackWider,
+                            height: 1.4,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: '┤ ',
+                              style: TextStyle(color: p.fgFaint),
+                            ),
+                            TextSpan(
+                              text: title!.toUpperCase(),
+                              style: TextStyle(color: tone),
+                            ),
+                            TextSpan(
+                              text: ' ├',
+                              style: TextStyle(color: p.fgFaint),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    children: [
-                      TextSpan(
-                        text: '┤ ',
-                        style: TextStyle(color: p.fgFaint),
-                      ),
-                      TextSpan(
-                        text: title!.toUpperCase(),
-                        style: TextStyle(color: tone),
-                      ),
-                      TextSpan(
-                        text: ' ├',
-                        style: TextStyle(color: p.fgFaint),
-                      ),
-                    ],
                   ),
-                ),
-              ),
-            ),
-          if (trailing != null)
-            Positioned(
-              top: -_notchHalf + 1,
-              right: _notchInset,
-              child: _Notch(
-                background: p.bg,
-                child: Text(
-                  trailing!.toUpperCase(),
-                  style: TextStyle(
-                    fontFamily: Metrics.mono,
-                    fontSize: 9.5,
-                    letterSpacing: 1.4,
-                    height: 1.4,
-                    color: p.fgFaint,
+                if (trailing != null)
+                  Padding(
+                    // Der Beiwert ist eine Spur kleiner gesetzt und sitzt
+                    // sonst optisch zu hoch.
+                    padding: const EdgeInsets.only(left: 8, top: 1),
+                    child: _Notch(
+                      background: p.bg,
+                      child: Text(
+                        trailing!.toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: Metrics.mono,
+                          fontSize: 9.5,
+                          letterSpacing: 1.4,
+                          height: 1.4,
+                          color: p.fgFaint,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+              ],
             ),
+          ),
         ],
       ),
     );

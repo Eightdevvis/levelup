@@ -300,13 +300,26 @@ class _PhaseBox extends StatelessWidget {
     final startDay = resolver.phaseStartDay(program, phaseIndex);
 
     return ZBox(
-      title: '${phaseIndex + 1} · ${phase.name}',
+      // In der Kerbe steht nur die Nummer. Der Name kann ein ganzer Satz sein
+      // ("Woche 3: Genauigkeit und echter Text") und gehört damit in den
+      // Kasten, wo er die volle Breite hat, statt in ein Etikett.
+      title: 'phase ${phaseIndex + 1}',
       trailing: '${phase.weeks}W',
       accent: color,
       padding: const EdgeInsets.fromLTRB(13, 20, 13, 13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            phase.name,
+            style: TextStyle(
+              fontFamily: Metrics.display,
+              fontSize: 21,
+              height: 1.15,
+              color: p.fg,
+            ),
+          ),
+          const SizedBox(height: 11),
           if (phase.description != null && expanded) ...[
             Text(
               phase.description!,
