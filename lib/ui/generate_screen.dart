@@ -1,8 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../data/claude_client.dart';
+import '../data/plan_service.dart';
 import '../main.dart';
 import '../model/library.dart';
 import 'program_screen.dart';
@@ -11,13 +12,18 @@ import 'widgets.dart';
 
 /// Plan direkt in der App erzeugen lassen.
 ///
-/// Der Weg über Kopieren und Einfügen bleibt daneben bestehen — er kostet
-/// nichts und braucht keinen Schlüssel. Dieser hier ist der bequeme.
+/// Es gibt keine Anmeldung und keinen Schlüssel: das Gerät meldet sich beim
+/// ersten Öffnen einmalig bei der LevelUp-API an und behält sein Token. Der
+/// Weg über Kopieren und Einfügen bleibt daneben bestehen — er kostet nichts
+/// und braucht überhaupt keinen Server.
 class GenerateScreen extends StatefulWidget {
-  const GenerateScreen({super.key, this.clientFactory});
+  const GenerateScreen({super.key, this.serviceFactory, this.registrar});
 
-  /// Nur für Tests: einen Client mit vorgegebenen Antworten einsetzen.
-  final ClaudeClient Function(String apiKey)? clientFactory;
+  /// Nur für Tests: einen Dienst mit vorgegebenen Antworten einsetzen.
+  final PlanService Function(String token)? serviceFactory;
+
+  /// Nur für Tests: die Geräteanmeldung ersetzen.
+  final Future<String> Function()? registrar;
 
   @override
   State<GenerateScreen> createState() => _GenerateScreenState();
@@ -30,9 +36,18 @@ class _GenerateScreenState extends State<GenerateScreen> {
   String? _thinking;
   int _chars = 0;
   String? _error;
-  PlanUsage? _usage;
+  Quota? _quota;
+  bool _connecting = true;
+  String? _connectError;
 
   bool get _running => _run != null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Erst nach dem ersten Frame: vorher gibt es kein AppScope im Kontext.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _connect());
+  }
 
   @override
   void dispose() {
@@ -41,25 +56,68 @@ class _GenerateScreenState extends State<GenerateScreen> {
     super.dispose();
   }
 
+  PlanService _service(String token) =>
+      (widget.serviceFactory ??
+          (t) => PlanService(baseUrl: PlanService.defaultBaseUrl, token: t))(
+        token,
+      );
+
+  /// Gerät anmelden (falls nötig) und das Kontingent holen.
+  Future<void> _connect() async {
+    if (!mounted) return;
+    final state = AppScope.of(context);
+    setState(() {
+      _connecting = true;
+      _connectError = null;
+    });
+
+    try {
+      var token = state.deviceToken;
+      if (token == null) {
+        token = await (widget.registrar ?? _register)();
+        await state.setDeviceToken(token);
+      }
+      final quota = await _service(token).quota();
+      if (!mounted) return;
+      setState(() {
+        _quota = quota;
+        _connecting = false;
+      });
+    } on PlanException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _connectError = e.message;
+        _connecting = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _connectError = 'Verbindung fehlgeschlagen: $e';
+        _connecting = false;
+      });
+    }
+  }
+
+  static Future<String> _register() => PlanService.register(
+    baseUrl: PlanService.defaultBaseUrl,
+    platform: defaultTargetPlatform.name,
+  );
+
   Future<void> _start() async {
     final state = AppScope.of(context);
-    final key = state.apiKey;
-    if (key == null) {
-      setState(() => _error = 'Kein API-Schlüssel hinterlegt.');
+    final token = state.deviceToken;
+    if (token == null) {
+      await _connect();
       return;
     }
 
     setState(() {
       _error = null;
       _thinking = null;
-      _usage = null;
       _chars = 0;
     });
 
-    final client = (widget.clientFactory ?? (k) => ClaudeClient(apiKey: k))(
-      key,
-    );
-    final sub = client
+    final sub = _service(token)
         .generatePlan(_request.text)
         .listen(
           (event) {
@@ -69,9 +127,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
                 setState(() => _thinking = text);
               case PlanWriting(:final chars):
                 setState(() => _chars = chars);
-              case PlanDone(:final bundle, :final usage):
-                setState(() => _usage = usage);
-                _install(bundle, usage);
+              case PlanDone(:final bundle):
+                _install(bundle);
             }
           },
           onError: (Object e) {
@@ -90,16 +147,18 @@ class _GenerateScreenState extends State<GenerateScreen> {
     setState(() => _run = sub);
   }
 
-  Future<void> _install(Bundle bundle, PlanUsage usage) async {
+  Future<void> _install(Bundle bundle) async {
     final state = AppScope.of(context);
     final messenger = ScaffoldMessenger.of(context);
     await state.installBundle(bundle);
     if (!mounted) return;
 
+    // Ein Lauf ist verbraucht — den Zählerstand vom Server holen, statt ihn
+    // hier zu raten.
+    unawaited(_refreshQuota());
+
     final program = bundle.programs.isEmpty ? null : bundle.programs.first;
-    messenger.showSnackBar(
-      SnackBar(content: Text('// PLAN ERZEUGT · ${usage.describe()}')),
-    );
+    messenger.showSnackBar(const SnackBar(content: Text('// PLAN ERZEUGT')));
     if (program == null) return;
     if (!mounted) return;
     await Navigator.of(context).push(
@@ -107,6 +166,17 @@ class _GenerateScreenState extends State<GenerateScreen> {
         builder: (_) => ProgramScreen(programId: program.id),
       ),
     );
+  }
+
+  Future<void> _refreshQuota() async {
+    final token = AppScope.of(context).deviceToken;
+    if (token == null) return;
+    try {
+      final quota = await _service(token).quota();
+      if (mounted) setState(() => _quota = quota);
+    } on Exception {
+      // Der Zählerstand ist Beiwerk; ein Fehler hier darf nichts kippen.
+    }
   }
 
   void _cancel() {
@@ -117,36 +187,35 @@ class _GenerateScreenState extends State<GenerateScreen> {
   @override
   Widget build(BuildContext context) {
     final p = AppTheme.paletteOf(context);
-    final state = AppScope.of(context);
 
-    if (!state.hasApiKey) {
+    if (_connecting) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('PLAN ERZEUGEN')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_connectError != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('PLAN ERZEUGEN')),
         body: EmptyState(
-          icon: Icons.key_outlined,
-          title: 'kein schlüssel',
-          message:
-              'Für die direkte Erzeugung braucht die App einen '
-              'Anthropic-API-Schlüssel. Ohne ihn bleibt der Weg über '
-              'Prompt kopieren und JSON einfügen.',
+          icon: Icons.cloud_off_outlined,
+          title: 'nicht verbunden',
+          message: _connectError!,
           action: OutlinedButton(
-            onPressed: () => _askForKey(context),
-            child: const Text('SCHLÜSSEL EINTRAGEN'),
+            onPressed: _connect,
+            child: const Text('NOCHMAL VERSUCHEN'),
           ),
         ),
       );
     }
 
+    final quota = _quota;
+    final exhausted = quota != null && quota.exhausted;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('PLAN ERZEUGEN'),
-        actions: [
-          IconButton(
-            tooltip: 'Schlüssel ändern',
-            icon: Icon(Icons.key_outlined, color: p.fgDim),
-            onPressed: () => _askForKey(context),
-          ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: p.border),
@@ -157,8 +226,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
         children: [
           Text(
             'Beschreib, was du erreichen willst und wo es klemmt. Je genauer '
-            'das Problem, desto besser die Diagnose — Claude stellt den Plan '
-            'auf die Ursache ab, nicht auf das Symptom.',
+            'das Problem, desto besser die Diagnose — der Plan stellt auf die '
+            'Ursache ab, nicht auf das Symptom.',
             style: TextStyle(
               fontFamily: Metrics.mono,
               fontSize: 11,
@@ -171,7 +240,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
             controller: _request,
             minLines: 5,
             maxLines: 12,
-            enabled: !_running,
+            enabled: !_running && !exhausted,
             style: TextStyle(
               fontFamily: Metrics.mono,
               fontSize: 11.5,
@@ -188,78 +257,62 @@ class _GenerateScreenState extends State<GenerateScreen> {
           if (_running)
             OutlinedButton(onPressed: _cancel, child: const Text('ABBRECHEN'))
           else
-            FilledButton(onPressed: _start, child: const Text('PLAN ERZEUGEN')),
+            FilledButton(
+              onPressed: exhausted ? null : _start,
+              child: const Text('PLAN ERZEUGEN'),
+            ),
           if (_running || _thinking != null || _error != null) ...[
             const SectionLabel('verlauf'),
             _Progress(
               running: _running,
               thinking: _thinking,
               chars: _chars,
-              usage: _usage,
               error: _error,
             ),
           ],
-          const SectionLabel('kosten'),
-          Text(
-            'Läuft über deinen eigenen Schlüssel und wird direkt bei Anthropic '
-            'abgerechnet. Ein vollständiger Plan kostet je nach Länge grob '
-            '20 bis 50 Cent — das Denken macht den größten Teil aus. Die '
-            'tatsächlichen Kosten stehen nach jedem Lauf oben im Verlauf.',
-            style: TextStyle(
-              fontFamily: Metrics.mono,
-              fontSize: 10.5,
-              height: 1.65,
-              color: p.fgFaint,
-            ),
-          ),
+          const SectionLabel('kontingent'),
+          _QuotaBox(quota: quota),
         ],
       ),
     );
   }
+}
 
-  Future<void> _askForKey(BuildContext context) async {
-    final state = AppScope.of(context);
-    final controller = TextEditingController(text: state.apiKey ?? '');
+class _QuotaBox extends StatelessWidget {
+  const _QuotaBox({required this.quota});
 
-    final key = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('API-SCHLÜSSEL'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Aus der Anthropic-Konsole. Wird im Klartext im App-Speicher '
-              'abgelegt.',
-              style: TextStyle(fontSize: 11, height: 1.5),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              autofocus: true,
-              obscureText: true,
-              decoration: const InputDecoration(hintText: 'sk-ant-...'),
-            ),
-          ],
+  final Quota? quota;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppTheme.paletteOf(context);
+    final q = quota;
+
+    final message = q == null
+        ? 'Der Zählerstand ist gerade nicht bekannt.'
+        : q.exhausted
+        ? 'Dein Freikontingent ist aufgebraucht. Der Weg über Prompt kopieren '
+              'und JSON einfügen bleibt offen und kostet nichts.'
+        : 'Noch ${q.remaining} ${q.remaining == 1 ? "Plan" : "Pläne"} frei, '
+              'davon heute ${q.dailyRemaining}. Bisher erzeugt: ${q.used}. '
+              'Abgerechnet wird nur, was auch ankommt — ein abgebrochener '
+              'Lauf zählt nicht.';
+
+    return ZBox(
+      title: 'kontingent',
+      trailing: q == null ? null : '${q.remaining} FREI',
+      accent: q != null && q.exhausted ? p.error : p.accent,
+      filled: false,
+      child: Text(
+        message,
+        style: TextStyle(
+          fontFamily: Metrics.mono,
+          fontSize: 10.5,
+          height: 1.65,
+          color: p.fgDim,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(''),
-            child: const Text('LÖSCHEN'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('SPEICHERN'),
-          ),
-        ],
       ),
     );
-
-    controller.dispose();
-    if (key == null) return;
-    await state.setApiKey(key);
-    if (mounted) setState(() {});
   }
 }
 
@@ -268,14 +321,12 @@ class _Progress extends StatelessWidget {
     required this.running,
     required this.thinking,
     required this.chars,
-    required this.usage,
     required this.error,
   });
 
   final bool running;
   final String? thinking;
   final int chars;
-  final PlanUsage? usage;
   final String? error;
 
   @override
@@ -289,7 +340,6 @@ class _Progress extends StatelessWidget {
           : running
           ? (chars > 0 ? 'schreibt' : 'denkt')
           : 'fertig',
-      trailing: usage?.describe(),
       accent: failed ? p.error : p.accent,
       filled: false,
       child: Column(

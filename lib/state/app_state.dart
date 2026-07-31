@@ -66,21 +66,24 @@ class AppState extends ChangeNotifier {
 
   // -- Einstellungen -------------------------------------------------------
 
-  static const _apiKeySetting = 'anthropicApiKey';
+  static const _tokenSetting = 'deviceToken';
 
-  String? get apiKey {
-    final value = _snapshot.settings[_apiKeySetting];
+  /// Das Gerätetoken der LevelUp-API. Wird beim ersten Erzeugen einmalig
+  /// geholt und danach behalten — es gibt keine Anmeldung und keinen zweiten
+  /// Weg, es zu erfahren.
+  String? get deviceToken {
+    final value = _snapshot.settings[_tokenSetting];
     return (value == null || value.isEmpty) ? null : value;
   }
 
-  bool get hasApiKey => apiKey != null;
+  bool get hasDevice => deviceToken != null;
 
-  Future<void> setApiKey(String? key) async {
+  Future<void> setDeviceToken(String? token) async {
     final settings = {..._snapshot.settings};
-    if (key == null || key.trim().isEmpty) {
-      settings.remove(_apiKeySetting);
+    if (token == null || token.trim().isEmpty) {
+      settings.remove(_tokenSetting);
     } else {
-      settings[_apiKeySetting] = key.trim();
+      settings[_tokenSetting] = token.trim();
     }
     _snapshot = _snapshot.copyWith(settings: settings);
     notifyListeners();

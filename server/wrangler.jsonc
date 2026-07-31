@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "levelup-api",
+  "main": "src/index.ts",
+  // Auf einem neuen Projekt gehört hier das heutige Datum hin.
+  "compatibility_date": "2026-07-31",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 }
+  },
+
+  // Die ID trägt `wrangler d1 create levelup` nach.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "levelup",
+      "database_id": "PLATZHALTER_WRANGLER_D1_CREATE"
+    }
+  ],
+
+  // Nicht geheim, deshalb hier statt als Secret. Der Anthropic-Schlüssel
+  // kommt über `wrangler secret put ANTHROPIC_API_KEY` und taucht nirgends
+  // im Repository auf.
+  "vars": {
+    // Freikontingent pro Gerät, solange es noch keine Bezahlung gibt.
+    "FREE_GENERATIONS": "3",
+    // Obergrenze für die Anliegen-Beschreibung — sonst zahlt der Betreiber
+    // Eingabe-Token für einen durchgereichten Roman.
+    "MAX_REQUEST_CHARS": "4000",
+    // Deckel für die Antwort. `max_tokens` begrenzt Denken UND Text zusammen.
+    "MAX_OUTPUT_TOKENS": "32000",
+    // Harte Tagesgrenze pro Gerät, unabhängig vom Guthaben.
+    "DAILY_LIMIT": "10"
+  }
+}
