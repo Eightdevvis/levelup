@@ -64,6 +64,29 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // -- Einstellungen -------------------------------------------------------
+
+  static const _apiKeySetting = 'anthropicApiKey';
+
+  String? get apiKey {
+    final value = _snapshot.settings[_apiKeySetting];
+    return (value == null || value.isEmpty) ? null : value;
+  }
+
+  bool get hasApiKey => apiKey != null;
+
+  Future<void> setApiKey(String? key) async {
+    final settings = {..._snapshot.settings};
+    if (key == null || key.trim().isEmpty) {
+      settings.remove(_apiKeySetting);
+    } else {
+      settings[_apiKeySetting] = key.trim();
+    }
+    _snapshot = _snapshot.copyWith(settings: settings);
+    notifyListeners();
+    await _persist();
+  }
+
   /// Legt ein fertiges Bundle in die Bibliothek — der Weg, über den ein
   /// Programm aus der offenen Bibliothek hereinkommt.
   Future<void> installBundle(Bundle bundle) async {

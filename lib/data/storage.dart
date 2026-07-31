@@ -64,6 +64,7 @@ class AppSnapshot {
     this.library = const Library(),
     this.progress = const {},
     this.sessions = const [],
+    this.settings = const {},
   });
 
   final Library library;
@@ -73,14 +74,24 @@ class AppSnapshot {
 
   final List<SessionLog> sessions;
 
+  /// Kleinkram, der nicht zur Bibliothek gehört — derzeit der API-Schlüssel.
+  ///
+  /// Liegt im selben Klartext-Speicher wie alles andere. Für eine App, die
+  /// einem einzelnen Menschen gehört, ist das vertretbar; auf Android liegt
+  /// die Datei im privaten App-Verzeichnis. Wer den Schlüssel härter schützen
+  /// will, müsste ihn in den Schlüsselbund des Systems auslagern.
+  final Map<String, String> settings;
+
   AppSnapshot copyWith({
     Library? library,
     Map<String, ProgramProgress>? progress,
     List<SessionLog>? sessions,
+    Map<String, String>? settings,
   }) => AppSnapshot(
     library: library ?? this.library,
     progress: progress ?? this.progress,
     sessions: sessions ?? this.sessions,
+    settings: settings ?? this.settings,
   );
 
   Map<String, dynamic> toJson() => {
@@ -88,6 +99,7 @@ class AppSnapshot {
     'library': library.toBundle().toJson(),
     'progress': progress.values.map((e) => e.toJson()).toList(),
     'sessions': sessions.map((e) => e.toJson()).toList(),
+    if (settings.isNotEmpty) 'settings': settings,
   };
 
   static AppSnapshot fromJson(Map<String, dynamic> json) {
@@ -107,6 +119,9 @@ class AppSnapshot {
       sessions: (json['sessions'] as List<dynamic>? ?? const [])
           .map((e) => SessionLog.fromJson(e as Map<String, dynamic>))
           .toList(growable: false),
+      settings: (json['settings'] as Map<String, dynamic>? ?? const {}).map(
+        (k, v) => MapEntry(k, v.toString()),
+      ),
     );
   }
 }

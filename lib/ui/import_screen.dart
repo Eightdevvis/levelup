@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../data/ai_prompt.dart';
 import '../main.dart';
 import '../state/app_state.dart';
+import 'generate_screen.dart';
 import 'program_screen.dart';
 import 'widgets.dart';
 
@@ -48,6 +49,21 @@ class _ImportScreenState extends State<ImportScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
         children: [
+          _StepCard(
+            step: 0,
+            title: 'Claude direkt fragen',
+            body:
+                'Beschreib dein Anliegen, und die App holt den Plan selbst. '
+                'Braucht einen eigenen API-Schlüssel und kostet pro Plan ein '
+                'paar Cent. Ohne Schlüssel nimm die beiden Schritte darunter.',
+            action: FilledButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const GenerateScreen()),
+              ),
+              child: const Text('PLAN ERZEUGEN'),
+            ),
+          ),
+          const SizedBox(height: 12),
           _StepCard(
             step: 1,
             title: 'Prompt kopieren',

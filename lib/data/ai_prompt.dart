@@ -1,11 +1,12 @@
-/// Der Prompt, den man in Claude (oder ein anderes Modell) kippt, um einen
-/// Plan zu bekommen, den die App direkt lesen kann.
+/// Die Spielregeln für einen Plan — Schema und Haltung.
 ///
-/// Bewusst als Text und nicht als API-Aufruf: so funktioniert die AI-Funktion
-/// sofort, ohne Schlüssel, ohne Kosten und mit dem Modell, mit dem man ohnehin
-/// schon redet. Der API-Weg kann später dieselbe Vorlage benutzen.
-const String kAiPromptTemplate = r'''
-Du baust einen Übungsplan für meine App "Programs". Antworte mit GENAU EINEM
+/// Wird an zwei Stellen gebraucht: als System-Prompt beim direkten API-Aufruf
+/// (dort bei jedem Aufruf identisch und damit zwischenspeicherbar) und als
+/// Vorlage zum Kopieren, wenn man den Plan lieber selbst in einem Chat
+/// erzeugt. Beide Wege müssen dieselben Regeln sehen, deshalb steht der Text
+/// nur einmal hier.
+const String kPlanSystemPrompt = r'''
+Du baust einen Übungsplan für meine App "LevelUp". Antworte mit GENAU EINEM
 JSON-Objekt, ohne Text davor oder danach.
 
 Wichtig zur Herangehensweise: diagnostiziere zuerst das eigentliche Problem,
@@ -104,6 +105,8 @@ REGELN
 - Nutze mehrere Phasen, wenn sich der Charakter des Trainings ändert.
 - Gib Übungen echte instructions und benefits, keine Platzhalter.
 - Nur JSON ausgeben, keine Erklärung drumherum.
-
-MEIN ANLIEGEN:
 ''';
+
+/// Dieselben Regeln zum Kopieren in einen Chat — mit der Anrede am Ende, hinter
+/// die man sein Anliegen schreibt.
+const String kAiPromptTemplate = '$kPlanSystemPrompt\nMEIN ANLIEGEN:\n';
