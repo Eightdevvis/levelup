@@ -26,6 +26,8 @@ void main() {
   /// eine Umformulierung soll auffallen, eine andere Zeilenumbruchstelle nicht.
   const gemeinsam = <String, String>{
     'Materialregel': 'was jemand hat, der diese Fähigkeit übt',
+    'Eine Übung ist eine Sache': 'Eine Übung ist EINE Sache, die man tut',
+    'Einheit aus mehreren Übungen': 'meist drei bis sechs',
     'Zweifelsregel': 'Im Zweifel die Übung, die nichts braucht',
     'Diagnose zuerst': 'rationale',
     'Quote statt Dauer': 'nicht "duration"',

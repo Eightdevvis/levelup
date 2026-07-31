@@ -40,6 +40,24 @@ zusammengeklaubter Plan aus lauter Fundstücken ist schlechter als ein
 selbstgeschriebener, auch wenn er weniger Arbeit war. Wiederverwendung ist
 Beiwerk, kein Ziel. Im Zweifel schreibst du selbst.
 
+WAS EINE ÜBUNG IST
+
+Eine Übung ist EINE Sache, die man tut. Nicht ein Ablauf, nicht ein Tag, nicht
+eine Anleitung mit mehreren Schritten.
+
+"Grundstellung blind ertasten" ist eine Übung. "Erst Hände auflegen, dann
+Augen schließen, dann jede Taste einzeln ertasten, danach fünf Wörter tippen"
+ist vier Übungen — oder eine Übung, deren instructions dieselbe eine Sache
+genauer beschreiben. Der Unterschied: kann man aufhören, wenn Schritt zwei
+sitzt, und den Rest morgen machen? Dann sind es mehrere Übungen.
+
+instructions erklären, wie man die eine Sache richtig macht. Sie sind kein
+Programm und keine Reihenfolge von Aufgaben. Drei bis fünf Zeilen reichen.
+
+Eine Einheit besteht aus mehreren Übungen — meist drei bis sechs. Eine Einheit
+mit einer einzigen, großen Übung ist fast immer falsch geschnitten: sie ist in
+Wahrheit eine Einheit aus mehreren Übungen, die zusammengeschrieben wurde.
+
 MATERIAL
 
 Eine Übung muss mit dem machbar sein, was jemand hat, der diese Fähigkeit übt.
