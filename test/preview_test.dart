@@ -8,6 +8,7 @@ import 'package:programs/main.dart';
 import 'package:programs/model/library.dart';
 import 'package:programs/state/app_state.dart';
 import 'package:programs/ui/program_screen.dart';
+import 'package:programs/ui/widgets.dart';
 
 /// Reinschauen und Übernehmen sind zwei verschiedene Dinge.
 ///
@@ -75,6 +76,46 @@ void main() {
 
     expect(state.programs, hasLength(1));
     expect(state.programs.single.id, fremd.programs.single.id);
+  });
+
+  testWidgets('eine Phase klappt auf, wenn man den Kasten antippt', (
+    tester,
+  ) async {
+    await pumpVorschau(tester);
+
+    // Zweite Phase: die erste ist von Anfang an offen.
+    final zweite = fremd.programs.single.phases[1];
+    final kasten = find.byWidgetPredicate(
+      (w) =>
+          w is RichText &&
+          w.text.toPlainText().toUpperCase().contains('PHASE 2'),
+    );
+    await tester.scrollUntilVisible(kasten, 150);
+    // Vollständig ins Bild holen: tester.tap zielt auf die Mitte, und die lag
+    // sonst hinter dem Rand.
+    await tester.ensureVisible(find.text(zweite.name));
+    await tester.pumpAndSettle();
+
+    // Gezielt IN Phase 2 suchen. Phase 1 ist von Anfang an offen und zeigt
+    // "ZUKLAPPEN" — eine Suche über den ganzen Baum wäre auch ohne den Fix
+    // grün gewesen.
+    Finder inPhase2(String text) => find.descendant(
+      of: find.ancestor(
+        of: find.text(zweite.name),
+        matching: find.byType(ZBox),
+      ),
+      matching: find.text(text),
+    );
+
+    expect(inPhase2('[ + WOCHEN ZEIGEN ]'), findsOneWidget);
+    expect(inPhase2('[ − ZUKLAPPEN ]'), findsNothing);
+
+    // Nicht die Zeile antippen, sondern den Kasten: genau das ging vorher
+    // nicht — man musste den 10,5-px-Fadenstrich treffen.
+    await tester.tap(find.text(zweite.name));
+    await tester.pumpAndSettle();
+
+    expect(inPhase2('[ − ZUKLAPPEN ]'), findsOneWidget);
   });
 
   testWidgets('ein eigenes Programm hat Menü und Startknopf', (tester) async {

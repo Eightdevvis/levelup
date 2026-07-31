@@ -11,7 +11,12 @@ import 'theme.dart';
 import 'widgets.dart';
 
 class ProgramScreen extends StatefulWidget {
-  const ProgramScreen({super.key, required this.programId, this.preview});
+  const ProgramScreen({
+    super.key,
+    required this.programId,
+    this.preview,
+    this.allowAdopt = true,
+  });
 
   final String programId;
 
@@ -26,6 +31,13 @@ class ProgramScreen extends StatefulWidget {
   /// Im Vorschaumodus gibt es deshalb kein Menü, keinen Fortschritt und keinen
   /// Weg in den Player — nur den Knopf, es wirklich zu übernehmen.
   final Bundle? preview;
+
+  /// Ob die Vorschau den Übernehmen-Knopf zeigt.
+  ///
+  /// Aus der offenen Bibliothek: ja. Aus dem Erzeugen-Bildschirm nein — dort
+  /// wird angenommen, und Annehmen ist mehr als Übernehmen (es teilt auch).
+  /// Zwei Knöpfe für zwei verschiedene Dinge wären eine Falle.
+  final bool allowAdopt;
 
   bool get isPreview => preview != null;
 
@@ -137,7 +149,9 @@ class _ProgramScreenState extends State<ProgramScreen> {
             _WarningBox(problems: missing),
           ],
           const SizedBox(height: 22),
-          if (widget.isPreview)
+          if (widget.isPreview && !widget.allowAdopt)
+            const SizedBox.shrink()
+          else if (widget.isPreview)
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: color,
@@ -364,6 +378,11 @@ class _PhaseBox extends StatelessWidget {
     final startDay = resolver.phaseStartDay(program, phaseIndex);
 
     return ZBox(
+      // Der ganze Kasten schaltet um. Vorher tat das nur die Zeile
+      // "[ + WOCHEN ZEIGEN ]" ganz unten — man musste einen Fadenstrich
+      // treffen, um eine Phase aufzuklappen, und der Kasten selbst reagierte
+      // auf nichts.
+      onTap: onToggle,
       // In der Kerbe steht nur die Nummer. Der Name kann ein ganzer Satz sein
       // ("Woche 3: Genauigkeit und echter Text") und gehört damit in den
       // Kasten, wo er die volle Breite hat, statt in ein Etikett.

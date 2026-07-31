@@ -38,6 +38,16 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   String? _thinking;
   final _searches = <String>[];
+
+  /// Der Gedankengang, wie er hereinkam.
+  ///
+  /// Er stand früher in voller Länge mitten im Ablauf — zwischen Plan und
+  /// Knöpfen lagen dann leicht zweitausend Zeichen, durch die man scrollen
+  /// musste, um etwas anzunehmen. Jetzt liegt er hinter einer Zeile.
+  final _thoughts = <String>[];
+
+  /// Ob das Feld für den Einspruch offen ist. Zu ist der Normalfall.
+  bool _editing = false;
   int _chars = 0;
   String? _error;
   Quota? _quota;
@@ -121,6 +131,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
       _error = null;
       _thinking = null;
       _searches.clear();
+      _thoughts.clear();
       _skipped = const [];
       _chars = 0;
     });
@@ -130,7 +141,20 @@ class _GenerateScreenState extends State<GenerateScreen> {
         if (!mounted) return;
         switch (event) {
           case PlanThinking(:final text):
-            setState(() => _thinking = text);
+            setState(() {
+              _thinking = text;
+              // Der Server schickt jeweils den letzten Satz, der über mehrere
+              // Ereignisse wächst. Ein Eintrag, der den vorigen fortsetzt,
+              // ersetzt ihn, statt ihn zu wiederholen.
+              if (text.trim().isEmpty) return;
+              if (_thoughts.isNotEmpty &&
+                  (text.startsWith(_thoughts.last) ||
+                      _thoughts.last.startsWith(text))) {
+                _thoughts[_thoughts.length - 1] = text;
+              } else {
+                _thoughts.add(text);
+              }
+            });
           case PlanWriting(:final chars):
             setState(() => _chars = chars);
           case PlanSearching():
@@ -234,6 +258,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   void _discard() {
     setState(() {
+      _editing = false;
       _draft = null;
       _reused = const [];
       _skipped = const [];
@@ -353,6 +378,9 @@ class _GenerateScreenState extends State<GenerateScreen> {
   List<Widget> _reviewView(Palette p, Bundle draft) {
     final program = draft.programs.isEmpty ? null : draft.programs.first;
     final note = draft.personalNote;
+    final wochen = program == null
+        ? 0
+        : program.phases.fold<int>(0, (s, ph) => s + ph.weeks);
 
     return [
       if (note != null) ...[
@@ -363,20 +391,40 @@ class _GenerateScreenState extends State<GenerateScreen> {
             note,
             style: TextStyle(
               fontFamily: Metrics.mono,
-              fontSize: 11,
+              fontSize: 11.5,
               height: 1.7,
               color: p.fg,
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 10),
       ],
+
+      // Die schmale Spalte zwischen persönlicher Nachricht und Plan.
+      if (_thoughts.isNotEmpty || _searches.isNotEmpty) ...[
+        _ThoughtStrip(
+          count: _thoughts.length + _searches.length,
+          onTap: () => _showThoughts(context),
+        ),
+        const SizedBox(height: 14),
+      ],
+
       const SectionLabel('vorschlag'),
       if (program != null)
         ZBox(
           title: 'plan',
-          trailing:
-              '${program.phases.fold<int>(0, (s, ph) => s + ph.weeks)}W',
+          trailing: '${wochen}W',
+          // Antippen führt in den Plan selbst — Phasen, Wochen, Tage. Eine
+          // Zusammenfassung reicht nicht, um zu entscheiden, ob man ihn will.
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => ProgramScreen(
+                programId: program.id,
+                preview: draft,
+                allowAdopt: false,
+              ),
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -395,7 +443,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
                   program.description!,
                   style: TextStyle(
                     fontFamily: Metrics.mono,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     height: 1.65,
                     color: p.fgDim,
                   ),
@@ -409,27 +457,29 @@ class _GenerateScreenState extends State<GenerateScreen> {
                     '· ${phase.name} — ${phase.weeks}W',
                     style: TextStyle(
                       fontFamily: Metrics.mono,
-                      fontSize: 10.5,
+                      fontSize: 11,
                       height: 1.5,
                       color: p.fgDim,
                     ),
                   ),
                 ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 '${draft.exercises.length} ÜBUNGEN · '
                 '${draft.routines.length} LISTEN'
-                '${_reused.isEmpty ? "" : " · ${_reused.length} ÜBERNOMMEN"}',
+                '${_reused.isEmpty ? "" : " · ${_reused.length} ÜBERNOMMEN"}'
+                '  ›  ANTIPPEN ZUM ANSEHEN',
                 style: TextStyle(
                   fontFamily: Metrics.mono,
-                  fontSize: 10.5,
+                  fontSize: 10,
                   letterSpacing: 1.2,
-                  color: p.fgFaint,
+                  color: p.fgDim,
                 ),
               ),
             ],
           ),
         ),
+
       if (_skipped.isNotEmpty) ...[
         const SectionLabel('nicht umgesetzt'),
         ZBox(
@@ -444,7 +494,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
                   '· $line',
                   style: TextStyle(
                     fontFamily: Metrics.mono,
-                    fontSize: 10,
+                    fontSize: 10.5,
                     height: 1.6,
                     color: p.error,
                   ),
@@ -453,57 +503,145 @@ class _GenerateScreenState extends State<GenerateScreen> {
           ),
         ),
       ],
-      const SectionLabel('einspruch'),
-      Text(
-        'Passt etwas nicht? Sag es, und es wird geändert — nur das. Alles '
-        'andere bleibt so, wie es hier steht.',
-        style: TextStyle(
-          fontFamily: Metrics.mono,
-          fontSize: 10.5,
-          height: 1.65,
-          color: p.fgDim,
-        ),
-      ),
-      const SizedBox(height: 10),
-      TextField(
-        controller: _feedback,
-        minLines: 3,
-        maxLines: 8,
-        enabled: !_running && !_accepting,
-        style: TextStyle(
-          fontFamily: Metrics.mono,
-          fontSize: 11.5,
-          height: 1.6,
-          color: p.fg,
-        ),
-        decoration: const InputDecoration(
-          hintText:
-              'Die Fingerübungen sind mir zu viel. Und Phase 2 darf länger '
-              'sein.',
-        ),
-      ),
-      const SizedBox(height: 12),
-      if (_running)
-        OutlinedButton(onPressed: _cancel, child: const Text('ABBRECHEN'))
-      else
-        OutlinedButton(
-          onPressed: _accepting ? null : _revise,
-          child: const Text('ÜBERARBEITEN'),
-        ),
-      ..._progressSection(p),
-      const SizedBox(height: 18),
+
+      const SizedBox(height: 22),
       FilledButton(
         onPressed: _running || _accepting ? null : _accept,
         child: Text(_accepting ? 'WIRD ÜBERNOMMEN…' : 'ANNEHMEN'),
       ),
       const SizedBox(height: 8),
-      TextButton(
-        onPressed: _running || _accepting ? null : _discard,
-        child: const Text('VERWERFEN'),
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _running || _accepting
+                  ? null
+                  : () => setState(() => _editing = !_editing),
+              child: Text(_editing ? 'ABBRECHEN' : 'BEARBEITEN'),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextButton(
+              onPressed: _running || _accepting ? null : _discard,
+              child: const Text('VERWERFEN'),
+            ),
+          ),
+        ],
       ),
+
+      if (_editing) ...[
+        const SectionLabel('was passt nicht'),
+        TextField(
+          controller: _feedback,
+          minLines: 3,
+          maxLines: 8,
+          autofocus: true,
+          enabled: !_running,
+          style: TextStyle(
+            fontFamily: Metrics.mono,
+            fontSize: 11.5,
+            height: 1.6,
+            color: p.fg,
+          ),
+          // Bewusst ohne Beispieltext: ein Vorschlag legt nahe, was einem
+          // missfallen könnte, und färbt damit die Antwort.
+          decoration: const InputDecoration(),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Geändert wird nur, wovon die Rede ist. Alles andere bleibt so, wie '
+          'es hier steht.',
+          style: TextStyle(
+            fontFamily: Metrics.mono,
+            fontSize: 10.5,
+            height: 1.65,
+            color: p.fgDim,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (_running)
+          OutlinedButton(onPressed: _cancel, child: const Text('ABBRECHEN'))
+        else
+          FilledButton(onPressed: _revise, child: const Text('ÜBERARBEITEN')),
+      ],
+
+      ..._progressSection(p),
       const SectionLabel('kontingent'),
       _QuotaBox(quota: _quota),
     ];
+  }
+
+  /// Die Gedanken in einem eigenen Fenster: scrollbar, jederzeit wegklickbar.
+  Future<void> _showThoughts(BuildContext context) {
+    final p = AppTheme.paletteOf(context);
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 48),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 14, 15, 0),
+              child: Text(
+                'GEDANKEN',
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: Metrics.trackWider,
+                  color: p.fg,
+                ),
+              ),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(15, 12, 15, 12),
+                children: [
+                  for (final line in _searches)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        '→ $line',
+                        style: TextStyle(
+                          fontFamily: Metrics.mono,
+                          fontSize: 10.5,
+                          height: 1.55,
+                          color: p.accent,
+                        ),
+                      ),
+                    ),
+                  for (final line in _thoughts)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        line,
+                        style: TextStyle(
+                          fontFamily: Metrics.mono,
+                          fontSize: 10.5,
+                          fontStyle: FontStyle.italic,
+                          height: 1.65,
+                          color: p.fgDim,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 0, 15, 12),
+              child: TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('SCHLIESSEN'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   List<Widget> _progressSection(Palette p) {
@@ -518,6 +656,53 @@ class _GenerateScreenState extends State<GenerateScreen> {
         error: _error,
       ),
     ];
+  }
+}
+
+/// Die schmale Spalte zwischen persönlicher Nachricht und Plan.
+///
+/// Bewusst eine Zeile und kein Kasten: der Gedankengang ist Beiwerk, und wer
+/// ihn nicht lesen will, soll nicht daran vorbeiscrollen müssen.
+class _ThoughtStrip extends StatelessWidget {
+  const _ThoughtStrip({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppTheme.paletteOf(context);
+
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+        decoration: BoxDecoration(border: Border.all(color: p.border, width: Metrics.line)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'GEDANKEN NACHLESEN · $count SCHRITTE',
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 10.5,
+                  letterSpacing: 1.3,
+                  color: p.fgDim,
+                ),
+              ),
+            ),
+            Text(
+              '›',
+              style: TextStyle(
+                fontFamily: Metrics.mono,
+                fontSize: 13,
+                color: p.fgDim,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
