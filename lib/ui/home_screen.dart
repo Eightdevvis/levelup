@@ -39,7 +39,7 @@ class HomeScreen extends StatelessWidget {
                                 builder: (_) => const ImportScreen(),
                               ),
                             ),
-                            child: const Text('PLAN IMPORTIEREN'),
+                            child: const Text('ERSTES PROGRAMM'),
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton(
@@ -308,9 +308,11 @@ class _StatusLine extends StatelessWidget {
         '${state.library.exercises.length} ÜBUNGEN',
         style: TextStyle(
           fontFamily: Metrics.mono,
-          fontSize: 8.5,
+          // 8,5 px sahen am Rechner nach feiner Fußnote aus und waren auf dem
+          // Handy nicht mehr lesbar.
+          fontSize: 10,
           letterSpacing: 1.4,
-          color: p.fgFaint,
+          color: p.fgDim,
         ),
       ),
     );

@@ -301,10 +301,12 @@ class EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: Metrics.mono,
-                fontSize: 11.5,
+                fontSize: 12.5,
                 fontStyle: FontStyle.italic,
                 height: 1.6,
-                color: p.fgFaint,
+                // Der einzige erklärende Satz auf einem sonst leeren
+                // Bildschirm — der darf nicht der blasseste sein.
+                color: p.fgDim,
               ),
             ),
             if (action != null) ...[const SizedBox(height: 24), action!],
