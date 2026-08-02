@@ -42,6 +42,16 @@ import type {
 
 const AKTIV = process.env.VERGLEICH === '1' && (process.env.ANTHROPIC_API_KEY ?? '') !== '';
 
+/**
+ * Wie oft jede Aufgabe wiederholt wird.
+ *
+ * Eins ist eine Stichprobe von eins: liegen zwei Modelle dann eng beieinander,
+ * sagt das nichts. Zwei oder drei Runden zeigen wenigstens, ob ein Unterschied
+ * größer ist als das Rauschen desselben Modells mit sich selbst. Kostet
+ * entsprechend mehr.
+ */
+const RUNDEN = Math.max(1, Number(process.env.VERGLEICH_RUNDEN ?? '1'));
+
 const MODELLE = ['claude-opus-5', 'claude-sonnet-5'] as const;
 
 /** Preise je Million Token: [Eingabe, Ausgabe]. */
@@ -374,9 +384,13 @@ describe.skipIf(!AKTIV)('Opus gegen Sonnet', () => {
 
       for (const modell of MODELLE) {
         const befunde: Modellbefund[] = [];
-        for (const aufgabe of AUFGABEN) {
-          console.log(`… ${modell} / ${aufgabe.name}`);
-          befunde.push(await laufe(modell, aufgabe));
+        for (let runde = 1; runde <= RUNDEN; runde++) {
+          for (const aufgabe of AUFGABEN) {
+            const name = RUNDEN === 1 ? aufgabe.name : `${aufgabe.name} (Runde ${runde})`;
+            console.log(`… ${modell} / ${name}`);
+            const ergebnis = await laufe(modell, aufgabe);
+            befunde.push({ ...ergebnis, aufgabe: name });
+          }
         }
         alle.set(modell, befunde);
       }
@@ -422,7 +436,8 @@ describe.skipIf(!AKTIV)('Opus gegen Sonnet', () => {
 
       expect(alle.size).toBe(MODELLE.length);
     },
-    // Dreißig Aufrufe mit Denken. Die Vorgabe von fünf Sekunden reicht nicht.
-    30 * 60 * 1000,
+    // Fünfzehn Aufrufe je Modell und Runde, viele davon mit langem Denken.
+    // Die Vorgabe von fünf Sekunden reicht nicht annähernd.
+    RUNDEN * 45 * 60 * 1000,
   );
 });
