@@ -2,3 +2,6 @@ node_modules/
 .dev.vars
 .dev.vars.*
 .wrangler/
+
+# Ausgaben des Modellvergleichs: echte Modellantworten, gehören nicht ins Repo.
+vergleich/
