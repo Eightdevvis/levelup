@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import type { Kandidat } from '../src/typen';
 
 /**
  * Ein Doppelgänger für die Anthropic-Schnittstelle.
@@ -83,4 +84,104 @@ export function testEnv(): Env {
     MODELL_KURATOR: 'claude-opus-5',
     MODELL_EMBEDDING: '@cf/baai/bge-m3',
   } as unknown as Env;
+}
+
+const DIM = 32;
+/** Die ersten Plätze bleiben für vorgegebene Vektoren frei, damit ein
+ *  Einheitsvektor nicht zufällig neben einem davon liegt. */
+const ERSTER_FREIER_PLATZ = 8;
+
+/**
+ * Ein Doppelgänger für Workers AI.
+ *
+ * Standardmäßig bekommt jeder verschiedene Text einen eigenen Einheitsvektor —
+ * verschiedene Texte sind damit exakt unähnlich, gleiche exakt gleich. Wer
+ * Ähnlichkeit *zwischen* zwei Texten testen will, gibt sie in `vorgaben` vor,
+ * benannt nach der ersten Zeile des Textes (dem Zweck bzw. Titel).
+ */
+export function fakeAi(vorgaben: Record<string, number[]> = {}): Ai {
+  const bekannt = new Map<string, number[]>();
+  let naechsterPlatz = ERSTER_FREIER_PLATZ;
+
+  const vektor = (text: string): number[] => {
+    const erstezeile = text.split('\n')[0];
+    const schon = bekannt.get(text);
+    if (schon !== undefined) return schon;
+
+    const vorgabe = vorgaben[erstezeile];
+    const neu = new Array<number>(DIM).fill(0);
+    if (vorgabe !== undefined) {
+      vorgabe.forEach((wert, i) => {
+        neu[i] = wert;
+      });
+    } else {
+      neu[naechsterPlatz++ % DIM] = 1;
+    }
+    bekannt.set(text, neu);
+    return neu;
+  };
+
+  return {
+    run: async (_modell: string, eingabe: { text: string | string[] }) => {
+      const texte = Array.isArray(eingabe.text) ? eingabe.text : [eingabe.text];
+      return { shape: [texte.length, DIM], data: texte.map(vektor) };
+    },
+  } as unknown as Ai;
+}
+
+export function testEnvMitAi(vorgaben: Record<string, number[]> = {}): Env {
+  return { ...testEnv(), AI: fakeAi(vorgaben) } as unknown as Env;
+}
+
+// --- Bibliothek: D1 und Vectorize -----------------------------------------
+
+interface Bestand {
+  kandidaten: Kandidat[];
+  treffer: { id: string; score: number }[];
+}
+
+export interface VectorizeAufruf {
+  vektor: readonly number[];
+  optionen: { topK?: number; filter?: unknown };
+}
+
+/**
+ * D1 und Vectorize als Doppelgänger.
+ *
+ * Nur so viel, wie `bibliothek.ts` und `retrieval.ts` tatsächlich aufrufen —
+ * eine nachgebaute Datenbank wäre ein zweites Produkt mit eigenen Fehlern.
+ */
+export function fakeBibliothek(bestand: Bestand): {
+  env: Env;
+  vectorizeAufrufe: VectorizeAufruf[];
+} {
+  const vectorizeAufrufe: VectorizeAufruf[] = [];
+
+  const DB = {
+    prepare: (_sql: string) => ({
+      bind: (...ids: string[]) => ({
+        all: async () => ({
+          results: bestand.kandidaten
+            .filter((k) => ids.includes(k.id))
+            .map((k) => ({
+              ...k,
+              tags: JSON.stringify(k.tags),
+              equipment: JSON.stringify(k.equipment),
+            })),
+        }),
+      }),
+    }),
+  };
+
+  const VEC_UEBUNGEN = {
+    query: async (vektor: readonly number[], optionen: { topK?: number; filter?: unknown }) => {
+      vectorizeAufrufe.push({ vektor, optionen });
+      return { count: bestand.treffer.length, matches: bestand.treffer };
+    },
+  };
+
+  return {
+    env: { ...testEnv(), DB, VEC_UEBUNGEN } as unknown as Env,
+    vectorizeAufrufe,
+  };
 }
