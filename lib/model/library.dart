@@ -49,6 +49,44 @@ class Library {
     programs: {...programs}..remove(id),
   );
 
+  /// Alles, worauf kein Programm mehr zeigt.
+  ///
+  /// Beim Löschen eines Programms bleiben seine Übungen absichtlich liegen —
+  /// sie sind der wertvolle Teil und sollen ein versehentlich gelöschtes
+  /// Programm überleben. Über die Zeit sammelt sich dadurch aber Bestand an,
+  /// den niemand mehr sieht und der trotzdem im Tag-Pool mitzählt. Deshalb
+  /// sichtbar aufräumbar statt automatisch weggeräumt.
+  ({Set<String> exercises, Set<String> routines}) get orphans {
+    final benutzteRoutinen = <String>{
+      for (final program in programs.values) ...program.routineIds,
+    };
+    final benutzteUebungen = <String>{
+      for (final id in benutzteRoutinen)
+        ...?routines[id]?.slots.map((s) => s.exerciseId),
+    };
+
+    return (
+      exercises: exercises.keys.where((id) => !benutzteUebungen.contains(id)).toSet(),
+      routines: routines.keys.where((id) => !benutzteRoutinen.contains(id)).toSet(),
+    );
+  }
+
+  /// Die Bibliothek ohne das, worauf nichts mehr zeigt.
+  Library withoutOrphans() {
+    final weg = orphans;
+    return Library(
+      exercises: {
+        for (final e in exercises.entries)
+          if (!weg.exercises.contains(e.key)) e.key: e.value,
+      },
+      routines: {
+        for (final r in routines.entries)
+          if (!weg.routines.contains(r.key)) r.key: r.value,
+      },
+      programs: programs,
+    );
+  }
+
   Bundle toBundle() => Bundle(
     exercises: exercises.values.toList(growable: false),
     routines: routines.values.toList(growable: false),

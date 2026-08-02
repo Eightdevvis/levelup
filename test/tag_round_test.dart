@@ -3,6 +3,7 @@ import 'package:programs/data/chat_prompts.dart';
 import 'package:programs/data/plan_round.dart';
 import 'package:programs/data/tag_round.dart';
 import 'package:programs/model/exercise.dart';
+import 'package:programs/model/library.dart';
 import 'package:programs/model/program.dart';
 
 /// Der kostenlose Weg in zwei Runden.
@@ -41,6 +42,7 @@ final bibliothek = [
 
 void main() {
   _migrationTests();
+  _orphanTests();
 
   group('Tag-Pool', () {
     test('zählt und sortiert nach Häufigkeit', () {
@@ -432,6 +434,68 @@ void _migrationTests() {
       expect(neu.benefits, alt.benefits);
       expect(neu.tags, alt.tags);
       expect(neu.toJson().containsKey('domain'), isFalse);
+    });
+  });
+}
+
+/// Beim Löschen eines Programms bleiben die Übungen liegen — absichtlich. Wer
+/// viel ausprobiert, sammelt dadurch Bestand an, den niemand mehr sieht und
+/// der trotzdem im Tag-Pool mitzählt.
+void _orphanTests() {
+  group('Verwaiste Einträge', () {
+    Library mitProgramm() => const Library().merge(
+      Bundle(
+        exercises: [
+          Exercise(id: 'benutzt', name: 'Benutzt', tags: ['geige']),
+          Exercise(id: 'verwaist', name: 'Verwaist', tags: ['krafttraining']),
+        ],
+        routines: [
+          Routine(
+            id: 'r-benutzt',
+            name: 'Einheit',
+            slots: [ExerciseSlot(exerciseId: 'benutzt')],
+          ),
+          Routine(id: 'r-verwaist', name: 'Rest', slots: []),
+        ],
+        programs: [
+          Program(
+            id: 'p',
+            name: 'Programm',
+            phases: [
+              Phase(
+                id: 'p1',
+                name: 'Phase',
+                weeks: 1,
+                schedule: CycleSchedule(days: [DaySlot(routineId: 'r-benutzt')]),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    test('findet, worauf kein Programm zeigt', () {
+      final weg = mitProgramm().orphans;
+      expect(weg.exercises, {'verwaist'});
+      expect(weg.routines, {'r-verwaist'});
+    });
+
+    test('räumt nur die Verwaisten weg', () {
+      final sauber = mitProgramm().withoutOrphans();
+      expect(sauber.exercises.keys, ['benutzt']);
+      expect(sauber.routines.keys, ['r-benutzt']);
+      expect(sauber.programs, hasLength(1));
+    });
+
+    test('und damit auch aus dem Tag-Pool', () {
+      final vorher = tagPool(mitProgramm().exercises.values).map((t) => t.tag);
+      final nachher = tagPool(
+        mitProgramm().withoutOrphans().exercises.values,
+      ).map((t) => t.tag);
+
+      expect(vorher, contains('krafttraining'));
+      expect(nachher, isNot(contains('krafttraining')));
+      expect(nachher, contains('geige'));
     });
   });
 }

@@ -196,6 +196,29 @@ class AppState extends ChangeNotifier {
     await _persist();
   }
 
+  /// Entfernt Übungen und Einheiten, auf die kein Programm mehr zeigt.
+  Future<int> removeOrphans() async {
+    final weg = _snapshot.library.orphans;
+    final anzahl = weg.exercises.length + weg.routines.length;
+    if (anzahl == 0) return 0;
+
+    _snapshot = _snapshot.copyWith(library: _snapshot.library.withoutOrphans());
+    notifyListeners();
+    await _persist();
+    return anzahl;
+  }
+
+  /// Alles weg: Bibliothek, Fortschritt, Sitzungen.
+  ///
+  /// Gedacht fürs Ausprobieren — wer den Ablauf mehrfach durchspielt, will
+  /// nicht die Reste von fünf Versuchen im Tag-Pool haben. Die Einstellungen
+  /// bleiben; sie haben mit den Inhalten nichts zu tun.
+  Future<void> resetEverything() async {
+    _snapshot = AppSnapshot(settings: _snapshot.settings);
+    notifyListeners();
+    await _persist();
+  }
+
   // -- Import / Export -----------------------------------------------------
 
   /// Nimmt das JSON, das eine AI ausgibt, und legt es in die Bibliothek.

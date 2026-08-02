@@ -21,6 +21,58 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   String _query = '';
   String? _domainFilter;
 
+  /// Was auf kein Programm mehr zeigt.
+  ///
+  /// Beim Löschen eines Programms bleiben die Übungen absichtlich liegen. Wer
+  /// viel ausprobiert, sammelt so aber Bestand an, den niemand mehr sieht und
+  /// der trotzdem im Tag-Pool für den Chat-Import mitzählt.
+  Future<void> _aufraeumen() async {
+    final state = AppScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final anzahl = await state.removeOrphans();
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          anzahl == 0
+              ? '// NICHTS VERWAIST'
+              : '// $anzahl EINTRÄGE ENTFERNT',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _allesLoeschen() async {
+    final bestaetigt = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Alles zurücksetzen?'),
+        content: const Text(
+          'Übungen, Einheiten, Programme und der gesamte Fortschritt werden '
+          'gelöscht. Das lässt sich nicht rückgängig machen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ABBRECHEN'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('LÖSCHEN'),
+          ),
+        ],
+      ),
+    );
+
+    if (bestaetigt != true || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    await AppScope.of(context).resetEverything();
+    if (!mounted) return;
+    messenger.showSnackBar(
+      const SnackBar(content: Text('// ALLES ZURÜCKGESETZT')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
@@ -41,7 +93,29 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
     }).toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text('Übungen (${all.length})')),
+      appBar: AppBar(
+        title: Text('Übungen (${all.length})'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (wahl) => wahl == 'aufraeumen'
+                ? _aufraeumen()
+                : _allesLoeschen(),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'aufraeumen',
+                child: Text(
+                  'Verwaiste aufräumen (${state.library.orphans.exercises.length})',
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'alles',
+                child: Text('Alles zurücksetzen'),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
