@@ -42,7 +42,7 @@ export interface Pruefzeile {
 export interface Speicher {
   env: Env;
   uebungen: Map<string, UebungZeile>;
-  tagvokabular: Map<string, { count: number }>;
+  tagvokabular: Map<string, { count: number; istTaetigkeit: boolean }>;
   pruefliste: Pruefzeile[];
   vektoren: Map<string, { werte: number[]; status: string }>;
   tagVektoren: Map<string, number[]>;
@@ -68,7 +68,7 @@ function suche(
 
 export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher {
   const uebungen = new Map<string, UebungZeile>();
-  const tagvokabular = new Map<string, { count: number }>();
+  const tagvokabular = new Map<string, { count: number; istTaetigkeit: boolean }>();
   const pruefliste: Pruefzeile[] = [];
   const vektoren = new Map<string, { werte: number[]; status: string }>();
   const tagVektoren = new Map<string, number[]>();
@@ -117,7 +117,8 @@ export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher 
         bild: bild === null ? null : String(bild),
         animation: animation === null ? null : String(animation),
         created_at: Number(created_at),
-        usage_count: 1,
+        // Der Grundstock legt mit 0 an, der Lauf mit 1.
+        usage_count: sql.includes(', 0, ?, ?') ? 0 : 1,
         source_program_id: prog === null ? null : String(prog),
         source_device_id: dev === null ? null : String(dev),
         status: 'aktiv',
@@ -137,7 +138,11 @@ export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher 
     }
     if (sql.includes('INSERT INTO tagvokabular')) {
       const tag = String(args[0]);
-      if (!tagvokabular.has(tag)) tagvokabular.set(tag, { count: 0 });
+      // Der Grundstock bindet zusätzlich ist_taetigkeit, das Speichern nicht.
+      const istTaetigkeit = args.length > 2 && Number(args[1]) === 1;
+      const schon = tagvokabular.get(tag);
+      if (schon === undefined) tagvokabular.set(tag, { count: 0, istTaetigkeit });
+      else schon.istTaetigkeit = schon.istTaetigkeit || istTaetigkeit;
       return;
     }
     if (sql.includes('UPDATE tagvokabular SET count')) {
@@ -211,7 +216,7 @@ export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher 
     vektoren.set(uebung.id, { werte: antwort.data[0], status: 'aktiv' });
 
     for (const tag of uebung.tags) {
-      if (!tagvokabular.has(tag)) tagvokabular.set(tag, { count: 1 });
+      if (!tagvokabular.has(tag)) tagvokabular.set(tag, { count: 1, istTaetigkeit: false });
       const tagAntwort = (await ai.run(env.MODELL_EMBEDDING, { text: tag })) as { data: number[][] };
       tagVektoren.set(tag, tagAntwort.data[0]);
     }
