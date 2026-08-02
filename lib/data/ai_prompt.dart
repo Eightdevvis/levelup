@@ -21,13 +21,13 @@ eine Anleitung mit mehreren Schritten.
 
 "Grundstellung blind ertasten" ist eine Übung. "Erst Hände auflegen, dann
 Augen schließen, dann jede Taste einzeln ertasten, danach fünf Wörter tippen"
-ist vier Übungen — oder eine Übung, deren instructions dieselbe eine Sache
-genauer beschreiben. Der Unterschied: kann man aufhören, wenn Schritt zwei
+ist vier Übungen — oder eine Übung, deren description dieselbe eine Sache
+genauer beschreibt. Der Unterschied: kann man aufhören, wenn Schritt zwei
 sitzt, und den Rest morgen machen? Dann sind es mehrere Übungen.
 
-instructions erklären, wie man die eine Sache richtig macht. Sie sind kein
+description erklärt, wie man die eine Sache richtig macht. Das ist kein
 Programm und keine Reihenfolge von Aufgaben. Drei bis fünf Zeilen reichen,
-höchstens sechs.
+höchstens sechs; getrennt werden sie mit \n.
 
 Der Name benennt die Sache, er beschreibt sie nicht. "Blattlesen im Viervierteltakt"
 ist ein Name. "Erst Takt klopfen und dann die Melodie lesen" ist keiner.
@@ -36,17 +36,17 @@ Eine Einheit besteht aus mehreren Übungen — meist drei bis sechs. Eine Einhei
 mit einer einzigen, großen Übung ist fast immer falsch geschnitten: sie ist in
 Wahrheit eine Einheit aus mehreren Übungen, die zusammengeschrieben wurde.
 
-Jede Übung braucht ein "summary" (ein bis zwei Sätze, worum es geht) und
-mindestens einen Eintrag in "benefits" (wofür das gut ist). Ohne beides steht
-der Nutzer vor einem Titel und weiß nicht, warum er das tun soll.
+Jede Übung braucht eine "description" (was man tut) und mindestens einen
+Eintrag in "benefits" (wofür das gut ist). Ohne beides steht der Nutzer vor
+einem Titel und weiß nicht, was er tun soll und warum.
 
 MATERIAL
 
 Eine Übung muss mit dem machbar sein, was jemand hat, der diese Fähigkeit übt.
 Wer Geige lernt, hat eine Geige — aber keinen Stapel vorbereiteter Notenkarten.
 
-Braucht eine Übung etwas darüber hinaus, dann steht es in "requirements" UND
-die instructions sagen, wie man es sich in wenigen Minuten selbst herstellt
+Braucht eine Übung etwas darüber hinaus, dann steht es in "equipment" UND
+die description sagt, wie man es sich in wenigen Minuten selbst herstellt
 oder wodurch man es ersetzt. Eine Übung, die stillschweigend Material
 voraussetzt, ist unbrauchbar: der Nutzer steht davor und weiß nicht, was er
 tun soll.
@@ -56,7 +56,7 @@ Im Zweifel die Übung, die nichts braucht.
 SCHEMA
 
 {
-  "version": 1,
+  "version": 2,
   "exercises": [ Exercise, ... ],
   "routines":  [ Routine, ... ],
   "programs":  [ Program, ... ]
@@ -65,13 +65,11 @@ SCHEMA
 Exercise = {
   "id": "kurz-kebab-case",         // eindeutig, wird referenziert
   "name": "Anzeigename",
-  "domain": "geige",               // freies Tag, z.B. kraft, zeichnen, sprache
-  "summary": "ein bis zwei Sätze",
-  "instructions": ["Schritt 1", "Schritt 2"],
+  "description": "was man tut; mehrere Zeilen mit \n",
   "benefits": ["wofür das gut ist"],
   "cues": ["kurzer Merksatz"],     // wird während der Ausführung eingeblendet
-  "requirements": ["Metronom"],
-  "tags": ["notation"],
+  "equipment": ["Metronom"],       // leer, wenn nichts Besonderes nötig ist
+  "tags": ["geige", "notation"],   // die Tätigkeit zuerst
   "defaultSets": [SetSpec]         // optional
 }
 
@@ -116,8 +114,8 @@ Program = {
   "id": "kebab-case",
   "name": "Anzeigename",
   "description": "ein bis zwei Sätze",
-  "domain": "geige",
-  "tags": ["notation"],
+  "tags": ["geige", "notation"],   // die Tätigkeit zuerst
+
   "rationale": "Warum der Plan so aussieht — die Diagnose.",
   "phases": [{
     "id": "kebab-case",
@@ -142,7 +140,7 @@ REGELN
 - Jede in "slots" referenzierte exerciseId muss in "exercises" vorkommen.
 - Jede in einem Schedule referenzierte routineId muss in "routines" vorkommen.
 - Nutze mehrere Phasen, wenn sich der Charakter des Trainings ändert.
-- Gib Übungen echte instructions und benefits, keine Platzhalter.
+- Gib Übungen eine echte description und echte benefits, keine Platzhalter.
 - Nur JSON ausgeben, keine Erklärung drumherum.
 ''';
 
