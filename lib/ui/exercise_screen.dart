@@ -54,24 +54,14 @@ class ExerciseScreen extends StatelessWidget {
                 ),
             ],
           ),
-          if (exercise.summary != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              exercise.summary!,
-              style: const TextStyle(fontSize: 15, height: 1.55),
-            ),
-          ],
-          if (exercise.instructions.isNotEmpty) ...[
+          if (exercise.lines.isNotEmpty) ...[
             // Nicht "Anleitung" und nicht nummeriert: eine Übung ist EINE
             // Sache, und nummerierte Schritte lasen sich wie eine Liste
             // eigenständiger Aufgaben — genau die Verwechslung, die den
             // Tagesplan unverständlich gemacht hat.
             SectionLabel('ausführung'),
-            for (var i = 0; i < exercise.instructions.length; i++)
-              _InstructionLine(
-                text: exercise.instructions[i],
-                color: color,
-              ),
+            for (final line in exercise.lines)
+              _InstructionLine(text: line, color: color),
           ],
           if (exercise.benefits.isNotEmpty) ...[
             SectionLabel('wofür das gut ist'),
@@ -106,10 +96,10 @@ class ExerciseScreen extends StatelessWidget {
               ],
             ),
           ],
-          if (exercise.requirements.isNotEmpty) ...[
+          if (exercise.equipment.isNotEmpty) ...[
             SectionLabel('braucht man'),
             Text(
-              exercise.requirements.join(' · '),
+              exercise.equipment.join(' · '),
               style: TextStyle(
                 fontSize: 13.5,
                 color: scheme.onSurface.withValues(alpha: 0.75),

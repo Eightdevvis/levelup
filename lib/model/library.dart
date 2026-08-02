@@ -3,7 +3,12 @@ import 'program.dart';
 
 /// Aktuelle Version des Austauschformats. Wird beim Import geprüft, damit
 /// alte Bundles später migriert statt stillschweigend falsch gelesen werden.
-const int kBundleVersion = 1;
+/// 2 seit dem Umbau des Übungsobjekts: `summary` und `instructions` sind zu
+/// `description` verschmolzen, `requirements` heißt `equipment`, `domain` ist
+/// weg (Spec §2.1). Ältere Bundles werden beim Lesen übersetzt; umgekehrt geht
+/// es nicht, deshalb die neue Zahl — eine alte App-Version soll sich weigern,
+/// statt die Texte stillschweigend zu verlieren.
+const int kBundleVersion = 2;
 
 /// Alles, was die App kennt: Übungen, Listen, Programme.
 ///

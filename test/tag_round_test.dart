@@ -12,13 +12,11 @@ import 'package:programs/model/program.dart';
 /// Anführungszeichen, Schlüssel ohne Anführungszeichen. Wer das dem Nutzer
 /// zum Wegschneiden überlässt, bekommt Fehlerberichte über den Parser.
 
-Exercise ex(String id, String name, List<String> tags, {String? domain}) {
+Exercise ex(String id, String name, List<String> tags) {
   return Exercise(
     id: id,
     name: name,
-    domain: domain ?? tags.first,
-    summary: 'Zusammenfassung zu $name',
-    instructions: ['Mach $name.'],
+    description: 'Mach $name.',
     tags: tags,
   );
 }
@@ -42,6 +40,8 @@ final bibliothek = [
 ];
 
 void main() {
+  _migrationTests();
+
   group('Tag-Pool', () {
     test('zählt und sortiert nach Häufigkeit', () {
       final pool = tagPool(bibliothek);
@@ -97,11 +97,10 @@ Klar, hier bitteschön:
       final result = parseRoundOne('''
 1. {
      "name": "Bogen im Spiegel führen",
-     "domain": "geige",
-     "summary": "Lange Striche vor dem Spiegel.",
+     "description": "Lange Striche vor dem Spiegel.",
      "instructions": ["Stell dich seitlich vor den Spiegel.", "Spiel lange Striche."],
      "benefits": ["Du siehst die Abweichung"],
-     "requirements": ["Spiegel"],
+     "equipment": ["Spiegel"],
      "tags": ["geige", "bogen", "haltung"]
    }
 ''');
@@ -109,8 +108,9 @@ Klar, hier bitteschön:
       final draft = result.requests.single as DraftRequest;
       expect(draft.exercise.name, 'Bogen im Spiegel führen');
       expect(draft.exercise.id, 'geige-bogen-im-spiegel-fuehren');
-      expect(draft.exercise.instructions, hasLength(2));
-      expect(draft.exercise.requirements, ['Spiegel']);
+      // summary und instructions fließen zu einem description zusammen.
+      expect(draft.exercise.lines, hasLength(3));
+      expect(draft.exercise.equipment, ['Spiegel']);
       expect(draft.exercise.tags, ['geige', 'bogen', 'haltung']);
     });
 
@@ -124,10 +124,7 @@ Klar, hier bitteschön:
 ''');
       final draft = result.requests.single as DraftRequest;
       expect(draft.exercise.name, 'Leersaiten stimmen');
-      // "description" ist der Name aus der Anleitung, "summary" der des
-      // Datenmodells. Beides muss ankommen.
-      expect(draft.exercise.summary, 'Stimme nach Gehör, prüfe danach.');
-      expect(draft.exercise.instructions, isNotEmpty);
+      expect(draft.exercise.description, 'Stimme nach Gehör, prüfe danach.');
     });
 
     test('benennt eine Übung ohne Tags, statt sie zu verschlucken', () {
@@ -362,6 +359,79 @@ Klar, hier bitteschön:
       expect(text, contains('Acht Takte aufnehmen und anhören'));
       expect(text, contains('"units"'));
       expect(text, contains('erfinde keine'));
+    });
+  });
+}
+
+/// Auf den Geräten liegen Bibliotheken im alten Format. Sie stillschweigend
+/// fallen zu lassen hieße, jedem seine Übungen zu leeren Hüllen zu machen.
+void _migrationTests() {
+  group('Altes Übungsformat lesen', () {
+    test('macht aus summary und instructions ein description', () {
+      final exercise = Exercise.fromJson({
+        'id': 'alt',
+        'name': 'Alte Übung',
+        'domain': 'geige',
+        'summary': 'Worum es geht.',
+        'instructions': ['Schritt eins.', 'Schritt zwei.'],
+        'requirements': ['Metronom'],
+        'tags': ['notation'],
+      });
+
+      expect(
+        exercise.description,
+        'Worum es geht.\nSchritt eins.\nSchritt zwei.',
+      );
+      expect(exercise.lines, hasLength(3));
+      expect(exercise.equipment, ['Metronom']);
+      // domain fliegt raus, bleibt aber als erster Tag erhalten — sonst
+      // verlöre die Übung ihre Tätigkeit und wäre nicht mehr auffindbar.
+      expect(exercise.tags, ['geige', 'notation']);
+      expect(exercise.domain, 'geige');
+    });
+
+    test('lässt eine bereits neue Übung unverändert', () {
+      final exercise = Exercise.fromJson({
+        'id': 'neu',
+        'name': 'Neue Übung',
+        'description': 'Tu dies.',
+        'equipment': ['Handy'],
+        'tags': ['sprechen', 'aufnahme'],
+      });
+
+      expect(exercise.description, 'Tu dies.');
+      expect(exercise.equipment, ['Handy']);
+      expect(exercise.tags, ['sprechen', 'aufnahme']);
+    });
+
+    test('doppelt die Domäne nicht, wenn sie schon Tag ist', () {
+      final exercise = Exercise.fromJson({
+        'id': 'x',
+        'name': 'X',
+        'domain': 'geige',
+        'tags': ['geige', 'bogen'],
+      });
+      expect(exercise.tags, ['geige', 'bogen']);
+    });
+
+    test('überlebt die Rundreise durch JSON', () {
+      final alt = Exercise.fromJson({
+        'id': 'alt',
+        'name': 'Alte Übung',
+        'domain': 'geige',
+        'summary': 'Worum es geht.',
+        'instructions': ['Schritt eins.'],
+        'requirements': ['Metronom'],
+        'benefits': ['Wird besser'],
+        'tags': ['notation'],
+      });
+      final neu = Exercise.fromJson(alt.toJson());
+
+      expect(neu.description, alt.description);
+      expect(neu.equipment, alt.equipment);
+      expect(neu.benefits, alt.benefits);
+      expect(neu.tags, alt.tags);
+      expect(neu.toJson().containsKey('domain'), isFalse);
     });
   });
 }

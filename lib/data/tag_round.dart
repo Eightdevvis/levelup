@@ -207,26 +207,29 @@ Exercise? _parseDraft(String text) {
   final tags = _list(text, 'tags').map(normalizeTag).where((t) => t.isNotEmpty).toList();
   if (tags.isEmpty) return null;
 
-  // "description" steht so in der Anleitung für den Nutzer; "summary" ist der
-  // Feldname des Datenmodells. Beides wird angenommen.
-  final summary = _field(text, 'summary') ?? _field(text, 'description') ?? _field(text, 'beschreibung');
-  final instructions = _list(text, 'instructions');
-  final benefits = _list(text, 'benefits');
-  final requirements = _list(text, 'requirements');
-  final domain = normalizeTag(_field(text, 'domain') ?? '');
+  // Verlangt wird "description". Die alten Namen werden trotzdem gelesen: eine
+  // KI, die schon einmal ein Übungsobjekt gesehen hat, schreibt gern das alte
+  // Format, und daran zu scheitern hilft niemandem.
+  final beschreibung =
+      _field(text, 'description') ??
+      _field(text, 'anleitung') ??
+      _field(text, 'beschreibung') ??
+      _field(text, 'summary');
+  final zeilen = _list(text, 'instructions');
+  final description = [
+    if (beschreibung != null && beschreibung.isNotEmpty) beschreibung,
+    ...zeilen.where((z) => z.trim().isNotEmpty),
+  ].join('\n');
 
   return Exercise(
-    id: slugFor(domain.isEmpty ? tags.first : domain, name),
+    id: slugFor(tags.first, name),
     name: name,
-    domain: domain.isEmpty ? (tags.isNotEmpty ? tags.first : 'allgemein') : domain,
-    summary: summary,
-    // Ohne Anleitung bleibt die Zusammenfassung der einzige Text — besser als
-    // eine Übung, vor der man steht und nicht weiß, was man tun soll.
-    instructions: instructions.isNotEmpty
-        ? instructions
-        : (summary == null ? const <String>[] : [summary]),
-    benefits: benefits,
-    requirements: requirements,
+    description: description.isEmpty ? null : description,
+    benefits: _list(text, 'benefits'),
+    // "requirements" hieß das Feld früher.
+    equipment: _list(text, 'equipment').isNotEmpty
+        ? _list(text, 'equipment')
+        : _list(text, 'requirements'),
     tags: tags,
     source: 'chat',
   );

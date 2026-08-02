@@ -85,18 +85,32 @@ String buildTagPrompt(List<TagCount> pool) {
   buffer.writeln('2. ["tag1", "tag4"]');
   buffer.writeln('3. {');
   buffer.writeln('     "name": "kurzer Name, der die Sache benennt",');
-  buffer.writeln('     "domain": "die Tätigkeit, z.B. geige",');
-  buffer.writeln('     "summary": "ein bis zwei Sätze: worum geht es",');
-  buffer.writeln('     "instructions": ["Schritt für Schritt, 2 bis 5 Zeilen"],');
+  buffer.writeln('     "description": "was ich tun soll, 2 bis 5 Zeilen",');
   buffer.writeln('     "benefits": ["was sich dadurch verändert"],');
-  buffer.writeln('     "requirements": ["was man dafür braucht, sonst leer"],');
+  buffer.writeln('     "equipment": ["was man dafür braucht, sonst leer"],');
   buffer.writeln('     "tags": ["tag1", "tag2", "tag3"]');
   buffer.writeln('   }');
+  buffer.writeln();
+  buffer.writeln(
+    'Genau diese fünf Felder, keine weiteren. Kein "domain" — die Tätigkeit '
+    'steht als erster Tag. Kein getrenntes "summary": "description" ist die '
+    'Handlungsanweisung, kein Erklärtext. Ich muss beim Lesen genau eine '
+    'Frage beantwortet bekommen — was mache ich hier? Mehrere Zeilen trennst '
+    'du mit \\n.',
+  );
   buffer.writeln();
   buffer.writeln(
     'Eine Übung ist EINE Sache, die man tut — nicht ein ganzer Ablauf und '
     'nicht ein Trainingstag. Kann man aufhören, wenn der erste Teil sitzt, '
     'und den Rest morgen machen? Dann sind es mehrere Übungen.',
+  );
+  buffer.writeln();
+  buffer.writeln(
+    'In "description" darf nichts stehen, das nur für mich gilt — kein '
+    'bestimmtes Stück, kein Termin, kein persönlicher Umstand. Statt "Takt 12 '
+    'aus deinem Prüfungsstück" schreibst du "die schwierigste Stelle deines '
+    'aktuellen Stücks". Die Übung soll für den nächsten Menschen mit '
+    'demselben Vorhaben unverändert brauchbar sein.',
   );
   buffer.writeln();
   buffer.writeln(
@@ -120,7 +134,7 @@ String buildPlanPrompt(List<Resolved> resolved) {
     final herkunft = r.isNew ? 'neu' : 'aus der Bibliothek';
     buffer.writeln('- id: ${r.exercise.id}   ($herkunft)');
     buffer.writeln('  name: ${r.exercise.name}');
-    final text = r.exercise.summary ?? r.exercise.instructions.join(' ');
+    final text = r.exercise.description ?? '';
     if (text.trim().isNotEmpty) {
       buffer.writeln('  ${_shorten(text, 200)}');
     }

@@ -398,8 +398,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 shrinkWrap: true,
                 padding: const EdgeInsets.fromLTRB(15, 10, 15, 10),
                 children: [
-                  if (ex.summary != null) absatz(ex.summary!),
-                  for (final line in ex.instructions) absatz('— $line'),
+                  for (final line in ex.lines) absatz('— $line'),
                   if (ex.benefits.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     for (final line in ex.benefits) absatz('↗ $line'),

@@ -36,7 +36,7 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
       }
       if (query.isEmpty) return true;
       return exercise.name.toLowerCase().contains(query) ||
-          (exercise.summary ?? '').toLowerCase().contains(query) ||
+          (exercise.description ?? '').toLowerCase().contains(query) ||
           exercise.tags.any((t) => t.toLowerCase().contains(query));
     }).toList();
 
@@ -193,10 +193,10 @@ class _ExerciseTile extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (exercise.summary != null) ...[
+                    if (exercise.description != null) ...[
                       const SizedBox(height: 3),
                       Text(
-                        exercise.summary!,
+                        exercise.description!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(

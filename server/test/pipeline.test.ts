@@ -273,14 +273,14 @@ describe('Bundle (Arbeitsliste 10)', () => {
 
     const bestand = bundle.exercises.find((e) => e.id === 'u-bestand');
     expect(bestand?.name).toBe('Acht Takte aufnehmen und anhören');
-    // Anleitung an Zeilenumbrüchen geteilt.
-    expect(bestand?.instructions).toEqual([
-      'Nimm die schwierigste Stelle auf.',
-      'Hör sie einmal ganz durch.',
-    ]);
+    // Die Anleitung bleibt ein Feld — geteilt wird erst beim Anzeigen.
+    expect(bestand?.description).toBe(
+      'Nimm die schwierigste Stelle auf.\nHör sie einmal ganz durch.',
+    );
     expect(bestand?.benefits).toEqual(['Du bemerkst Fehler, die du im Spielen nicht hörst']);
-    expect(bestand?.requirements).toEqual(['aufnahmegeraet']);
-    expect(bestand?.domain).toBe('geige');
+    expect(bestand?.equipment).toEqual(['aufnahmegeraet']);
+    // Kein domain-Feld mehr: die Tätigkeit steht als erster Tag.
+    expect(bestand?.tags[0]).toBe('geige');
 
     const slot = bundle.routines[0].slots[0];
     expect(slot.sets).toEqual([{ target: { kind: 'duration', seconds: 600 } }]);

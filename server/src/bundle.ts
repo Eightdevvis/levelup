@@ -16,7 +16,8 @@ import type {
  * Jede weitere Übersetzungsstelle wäre eine Fehlerquelle mehr.
  */
 
-export const BUNDLE_VERSION = 1;
+/** 2 seit dem Umbau des Übungsobjekts — siehe `kBundleVersion` in der App. */
+export const BUNDLE_VERSION = 2;
 
 interface Media {
   kind: 'image' | 'animation';
@@ -26,11 +27,12 @@ interface Media {
 interface Exercise {
   id: string;
   name: string;
-  domain: string;
-  instructions: string[];
+  /** Eine Handlungsanweisung, ein Feld. `summary` und `instructions` waren
+   *  getrennt und sagten dasselbe (Spec §2.1). */
+  description: string;
   benefits: string[];
   tags: string[];
-  requirements: string[];
+  equipment: string[];
   media: Media[];
 }
 
@@ -195,22 +197,25 @@ function zuExercise(uebung: UebungDatensatz, taetigkeiten: Set<string>): Exercis
   return {
     id: uebung.id,
     name: uebung.titel,
-    domain: ersteTaetigkeit(uebung.tags, taetigkeiten),
-    instructions: zerlege(uebung.anleitung),
+    description: uebung.anleitung,
     benefits: [uebung.benefit],
-    tags: uebung.tags,
-    requirements: uebung.equipment,
+    tags: sortiertNachTaetigkeit(uebung.tags, taetigkeiten),
+    equipment: uebung.equipment,
     media,
   };
 }
 
-/** Die Anleitung an Zeilenumbrüchen geteilt, sonst als ein Eintrag. */
-function zerlege(anleitung: string): string[] {
-  const zeilen = anleitung
-    .split('\n')
-    .map((z) => z.trim())
-    .filter((z) => z.length > 0);
-  return zeilen.length > 0 ? zeilen : [anleitung];
+/**
+ * Das Tätigkeits-Tag nach vorn.
+ *
+ * Die App hat kein Bereichsfeld mehr — sie liest die Tätigkeit als ersten Tag.
+ * Steht dort ein beliebiger anderer, gruppiert die Bibliothek nach „aufnahme"
+ * statt nach „geige".
+ */
+function sortiertNachTaetigkeit(tags: string[], taetigkeiten: Set<string>): string[] {
+  const index = tags.findIndex((t) => taetigkeiten.has(t));
+  if (index <= 0) return tags;
+  return [tags[index], ...tags.filter((_, i) => i !== index)];
 }
 
 /** `Exercise.domain` ist ein freies Tag. Genommen wird das erste, das im
