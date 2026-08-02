@@ -34,14 +34,20 @@ export function bedarfstext(zweck: string, tags: readonly string[]): string {
   return `${zweck}\n${[...tags].sort().join(', ')}`;
 }
 
-/** Derselbe Aufbau für einen fertigen Baustein — sonst vergliche man beim
- *  Retrieval Äpfel mit Birnen. */
+/**
+ * Der Text eines fertigen Bausteins: `titel + anleitung + tags` (§9).
+ *
+ * Derselbe Vektor dient zwei Zwecken — dem Dedupe vor dem Speichern und der
+ * Suche in 3b. Er ist nicht symmetrisch zum Bedarfstext, und das ist so
+ * gewollt: der Bedarf beschreibt, was gebraucht wird, der Baustein, was getan
+ * wird. `bge-m3` ist für genau solche Paare trainiert.
+ */
 export function bausteintext(
   titel: string,
-  benefit: string,
+  anleitung: string,
   tags: readonly string[],
 ): string {
-  return `${titel}. ${benefit}\n${[...tags].sort().join(', ')}`;
+  return `${titel}\n${anleitung}\n${[...tags].sort().join(', ')}`;
 }
 
 export class EmbeddingError extends Error {}
