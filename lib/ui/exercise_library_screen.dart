@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/demo_bundle.dart';
 import '../main.dart';
 import '../model/exercise.dart';
 import 'exercise_screen.dart';
@@ -37,6 +38,24 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
           anzahl == 0
               ? '// NICHTS VERWAIST'
               : '// $anzahl EINTRÄGE ENTFERNT',
+        ),
+      ),
+    );
+  }
+
+  /// Lädt den Prüfstand: ein Programm, das jede Funktion einmal zeigt.
+  ///
+  /// Nicht beim Start, sondern auf Zuruf — automatisch eingespielt würde es
+  /// den Tag-Pool verunreinigen, aus dem der Chat-Import schöpft.
+  Future<void> _testprogramm() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final bundle = demoBundle();
+    await AppScope.of(context).installBundle(bundle);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          '// TESTPROGRAMM GELADEN · ${bundle.exercises.length} ÜBUNGEN',
         ),
       ),
     );
@@ -98,15 +117,21 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
-            onSelected: (wahl) => wahl == 'aufraeumen'
-                ? _aufraeumen()
-                : _allesLoeschen(),
+            onSelected: (wahl) => switch (wahl) {
+              'aufraeumen' => _aufraeumen(),
+              'demo' => _testprogramm(),
+              _ => _allesLoeschen(),
+            },
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'aufraeumen',
                 child: Text(
                   'Verwaiste aufräumen (${state.library.orphans.exercises.length})',
                 ),
+              ),
+              const PopupMenuItem(
+                value: 'demo',
+                child: Text('Testprogramm laden'),
               ),
               const PopupMenuItem(
                 value: 'alles',
