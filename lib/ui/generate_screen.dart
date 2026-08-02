@@ -32,9 +32,24 @@ class GenerateScreen extends StatefulWidget {
 }
 
 class _GenerateScreenState extends State<GenerateScreen> {
-  final _request = TextEditingController();
+  // Vier Felder statt einem (Spec §3). Das Equipment-Feld ist keine Zugabe:
+  // ohne Angabe erzeugt die KI im Zweifel den kleinsten gemeinsamen Nenner.
+  final _vorhaben = TextEditingController();
+  final _stand = TextEditingController();
+  final _equipment = TextEditingController();
+  int _minutenProTag = 30;
+  int _tageProWoche = 4;
+
   final _feedback = TextEditingController();
   StreamSubscription<PlanEvent>? _run;
+
+  /// Der laufende Vorgang zwischen Diagnose und Plan.
+  Diagnose? _diagnose;
+  final _antworten = <TextEditingController>[];
+  bool _diagnosing = false;
+
+  /// Welcher Schritt der Pipeline gerade läuft.
+  String? _schritt;
 
   String? _thinking;
   final _searches = <String>[];
@@ -56,7 +71,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   /// Der vorgelegte, noch nicht angenommene Plan.
   Bundle? _draft;
-  List<String> _reused = const [];
+  int _uebernommen = 0;
   List<String> _skipped = const [];
   bool _accepting = false;
 
@@ -72,7 +87,12 @@ class _GenerateScreenState extends State<GenerateScreen> {
   @override
   void dispose() {
     _run?.cancel();
-    _request.dispose();
+    _vorhaben.dispose();
+    _stand.dispose();
+    _equipment.dispose();
+    for (final c in _antworten) {
+      c.dispose();
+    }
     _feedback.dispose();
     super.dispose();
   }
@@ -133,6 +153,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
       _searches.clear();
       _thoughts.clear();
       _skipped = const [];
+      _schritt = null;
       _chars = 0;
     });
 
@@ -159,10 +180,13 @@ class _GenerateScreenState extends State<GenerateScreen> {
             setState(() => _chars = chars);
           case PlanSearching():
             setState(() => _searches.add(event.describe()));
-          case PlanDone(:final bundle, :final reused):
+          case PlanSchritt():
+            setState(() => _schritt = event.describe());
+          case PlanDone(:final bundle, :final kennzahlen):
             setState(() {
               _draft = bundle;
-              _reused = reused;
+              _uebernommen = kennzahlen?.reuse ?? 0;
+              _schritt = null;
             });
           case PlanRevised(:final patch):
             _applyRevision(patch);
@@ -184,13 +208,101 @@ class _GenerateScreenState extends State<GenerateScreen> {
     setState(() => _run = sub);
   }
 
-  void _start() {
+  /// Schritt [1]: erst die Diagnose, dann entweder Rückfragen oder der Plan.
+  ///
+  /// Der Halt bei den Rückfragen ist kein Umweg: die Antworten können kippen,
+  /// ob die Rückkopplung vorhanden ist oder fehlt — und davon hängt der ganze
+  /// Aufbau von Phase 1 ab.
+  Future<void> _start() async {
     final token = AppScope.of(context).deviceToken;
     if (token == null) {
       unawaited(_connect());
       return;
     }
-    _listen(_service(token).generatePlan(_request.text));
+
+    setState(() {
+      _diagnosing = true;
+      _error = null;
+      _schritt = 'Verstehen, worum es geht';
+    });
+
+    try {
+      final diagnose = await _service(token).starteLauf(
+        Eingabe(
+          vorhaben: _vorhaben.text,
+          stand: _stand.text,
+          minutenProTag: _minutenProTag,
+          tageProWoche: _tageProWoche,
+          equipment: _equipment.text,
+        ),
+      );
+      if (!mounted) return;
+      _weiterMitDiagnose(token, diagnose);
+    } on Exception catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = '$e';
+        _diagnosing = false;
+        _schritt = null;
+      });
+    }
+  }
+
+  void _weiterMitDiagnose(String token, Diagnose diagnose) {
+    for (final c in _antworten) {
+      c.dispose();
+    }
+    _antworten
+      ..clear()
+      ..addAll(diagnose.rueckfragen.map((_) => TextEditingController()));
+
+    setState(() {
+      _diagnose = diagnose;
+      _diagnosing = false;
+      _schritt = null;
+    });
+
+    if (!diagnose.hatFragen) _listen(_service(token).erzeugePlan(diagnose.laufId));
+  }
+
+  /// Schritt [1b]. Leere Felder gelten als übersprungen — jede Frage einzeln.
+  Future<void> _antwortenAbsenden() async {
+    final token = AppScope.of(context).deviceToken;
+    final diagnose = _diagnose;
+    if (token == null || diagnose == null) return;
+
+    setState(() {
+      _diagnosing = true;
+      _error = null;
+      _schritt = 'Antworten einarbeiten';
+    });
+
+    try {
+      final zweite = await _service(token).beantworteRueckfragen(
+        diagnose.laufId,
+        [
+          for (final c in _antworten)
+            c.text.trim().isEmpty ? null : c.text.trim(),
+        ],
+      );
+      if (!mounted) return;
+      _weiterMitDiagnose(token, zweite);
+    } on Exception catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = '$e';
+        _diagnosing = false;
+        _schritt = null;
+      });
+    }
+  }
+
+  /// Alle Fragen überspringen — der Plan entsteht mit dem, was schon dasteht.
+  void _fragenUeberspringen() {
+    for (final c in _antworten) {
+      c.clear();
+    }
+    unawaited(_antwortenAbsenden());
   }
 
   void _revise() {
@@ -260,8 +372,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
     setState(() {
       _editing = false;
       _draft = null;
-      _reused = const [];
+      _diagnose = null;
+      _uebernommen = 0;
       _skipped = const [];
+      _schritt = null;
       _feedback.clear();
     });
   }
@@ -318,7 +432,11 @@ class _GenerateScreenState extends State<GenerateScreen> {
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(15, 16, 15, 40),
-        children: _draft == null ? _askView(p) : _reviewView(p, _draft!),
+        children: switch ((_draft, _diagnose)) {
+          (final Bundle draft, _) => _reviewView(p, draft),
+          (_, final Diagnose d) when d.hatFragen => _questionsView(p, d),
+          _ => _askView(p),
+        },
       ),
     );
   }
@@ -329,11 +447,12 @@ class _GenerateScreenState extends State<GenerateScreen> {
     final quota = _quota;
     final exhausted = quota != null && quota.exhausted;
 
+    final gesperrt = _running || _diagnosing || exhausted;
+
     return [
       Text(
-        'Beschreib, was du erreichen willst und wo es klemmt. Je genauer das '
-        'Problem, desto besser die Diagnose — der Plan stellt auf die Ursache '
-        'ab, nicht auf das Symptom.',
+        'Vier Angaben. Je genauer das Problem, desto besser die Diagnose — der '
+        'Plan stellt auf die Ursache ab, nicht auf das Symptom.',
         style: TextStyle(
           fontFamily: Metrics.mono,
           fontSize: 11,
@@ -341,35 +460,139 @@ class _GenerateScreenState extends State<GenerateScreen> {
           color: p.fgDim,
         ),
       ),
-      const SectionLabel('dein anliegen'),
-      TextField(
-        controller: _request,
-        minLines: 5,
-        maxLines: 12,
-        enabled: !_running && !exhausted,
+
+      const SectionLabel('was möchtest du können'),
+      _Feld(
+        controller: _vorhaben,
+        enabled: !gesperrt,
+        minLines: 2,
+        maxLines: 5,
+        hint: 'Ich will Bach vom Blatt spielen können.',
+      ),
+
+      const SectionLabel('was kannst du schon'),
+      _Feld(
+        controller: _stand,
+        enabled: !gesperrt,
+        minLines: 3,
+        maxLines: 8,
+        hint:
+            'Sechs Jahre Unterricht, spiele nach Gehör gut. Blattspiel habe '
+            'ich zweimal angefangen und wieder gelassen.',
+      ),
+
+      const SectionLabel('wie viel zeit'),
+      _Zeit(
+        minutenProTag: _minutenProTag,
+        tageProWoche: _tageProWoche,
+        enabled: !gesperrt,
+        onMinuten: (v) => setState(() => _minutenProTag = v),
+        onTage: (v) => setState(() => _tageProWoche = v),
+      ),
+
+      const SectionLabel('was steht dir zur verfügung'),
+      _Feld(
+        controller: _equipment,
+        enabled: !gesperrt,
+        minLines: 2,
+        maxLines: 6,
+        hint: 'Geige, Stimmgerät, Handy zum Aufnehmen, Notenständer',
+      ),
+      const SizedBox(height: 8),
+      // Wortgleich aus der Spec (§3): das Feld verhindert, dass die KI im
+      // Zweifel den kleinsten gemeinsamen Nenner plant.
+      Text(
+        'Was steht dir zur Verfügung? Zähl ruhig alles auf, was nützlich sein '
+        'könnte — Geräte, Werkzeuge, Räume, Apps, auch Menschen, die dir '
+        'helfen könnten. Nicht alles davon wird gebraucht, aber was du nicht '
+        'nennst, kann auch nicht eingeplant werden.',
         style: TextStyle(
           fontFamily: Metrics.mono,
-          fontSize: 11.5,
-          height: 1.6,
-          color: p.fg,
-        ),
-        decoration: const InputDecoration(
-          hintText:
-              'Ich spiele gut Geige, kann aber Bach nicht vom Blatt lesen. '
-              'Zwölf Wochen, etwa 45 Minuten am Tag.',
+          fontSize: 10.5,
+          height: 1.65,
+          color: p.fgDim,
         ),
       ),
-      const SizedBox(height: 14),
+
+      const SizedBox(height: 16),
       if (_running)
         OutlinedButton(onPressed: _cancel, child: const Text('ABBRECHEN'))
       else
         FilledButton(
-          onPressed: exhausted ? null : _start,
-          child: const Text('PLAN ERZEUGEN'),
+          onPressed: gesperrt ? null : () => unawaited(_start()),
+          child: Text(_diagnosing ? 'WIRD GELESEN…' : 'LOSLEGEN'),
         ),
       ..._progressSection(p),
       const SectionLabel('kontingent'),
       _QuotaBox(quota: quota),
+    ];
+  }
+
+  // -- Rückfragen ------------------------------------------------------------
+
+  /// Bis zu drei Fragen, jede einzeln überspringbar.
+  ///
+  /// Sie stehen hier und nicht im ersten Formular, weil erst die Diagnose
+  /// weiß, was sie noch braucht. Wer nichts sagen will, kommt trotzdem weiter.
+  List<Widget> _questionsView(Palette p, Diagnose diagnose) {
+    return [
+      if (diagnose.kernproblem.isNotEmpty) ...[
+        ZBox(
+          title: 'so verstanden',
+          filled: true,
+          child: Text(
+            diagnose.kernproblem,
+            style: TextStyle(
+              fontFamily: Metrics.mono,
+              fontSize: 11.5,
+              height: 1.7,
+              color: p.fg,
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+      ],
+      Text(
+        'Diese Antworten würden den Plan verändern. Was du nicht beantwortest, '
+        'bleibt offen — der Plan entsteht trotzdem.',
+        style: TextStyle(
+          fontFamily: Metrics.mono,
+          fontSize: 11,
+          height: 1.65,
+          color: p.fgDim,
+        ),
+      ),
+      for (var i = 0; i < diagnose.rueckfragen.length; i++) ...[
+        const SizedBox(height: 16),
+        Text(
+          diagnose.rueckfragen[i],
+          style: TextStyle(
+            fontFamily: Metrics.mono,
+            fontSize: 11.5,
+            height: 1.6,
+            color: p.fg,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _Feld(
+          controller: _antworten[i],
+          enabled: !_diagnosing,
+          minLines: 2,
+          maxLines: 6,
+          hint: 'Antwort — oder leer lassen',
+        ),
+      ],
+      const SizedBox(height: 18),
+      FilledButton(
+        onPressed: _diagnosing ? null : () => unawaited(_antwortenAbsenden()),
+        child: Text(_diagnosing ? 'WIRD GELESEN…' : 'WEITER'),
+      ),
+      const SizedBox(height: 8),
+      TextButton(
+        onPressed: _diagnosing ? null : _fragenUeberspringen,
+        child: const Text('ALLE ÜBERSPRINGEN'),
+      ),
+      ..._progressSection(p),
     ];
   }
 
@@ -467,7 +690,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
               Text(
                 '${draft.exercises.length} ÜBUNGEN · '
                 '${draft.routines.length} LISTEN'
-                '${_reused.isEmpty ? "" : " · ${_reused.length} ÜBERNOMMEN"}'
+                '${_uebernommen == 0 ? "" : " · $_uebernommen ÜBERNOMMEN"}'
                 '  ›  ANTIPPEN ZUM ANSEHEN',
                 style: TextStyle(
                   fontFamily: Metrics.mono,
@@ -645,11 +868,14 @@ class _GenerateScreenState extends State<GenerateScreen> {
   }
 
   List<Widget> _progressSection(Palette p) {
-    if (!_running && _thinking == null && _error == null) return const [];
+    if (!_running && !_diagnosing && _thinking == null && _error == null) {
+      return const [];
+    }
     return [
       const SectionLabel('verlauf'),
       _Progress(
-        running: _running,
+        running: _running || _diagnosing,
+        schritt: _schritt,
         thinking: _thinking,
         searches: _searches,
         chars: _chars,
@@ -747,6 +973,7 @@ class _QuotaBox extends StatelessWidget {
 class _Progress extends StatelessWidget {
   const _Progress({
     required this.running,
+    required this.schritt,
     required this.thinking,
     required this.searches,
     required this.chars,
@@ -754,6 +981,7 @@ class _Progress extends StatelessWidget {
   });
 
   final bool running;
+  final String? schritt;
   final String? thinking;
   final List<String> searches;
   final int chars;
@@ -786,6 +1014,17 @@ class _Progress extends StatelessWidget {
               ),
             )
           else ...[
+            if (schritt != null)
+              Text(
+                schritt!.toUpperCase(),
+                style: TextStyle(
+                  fontFamily: Metrics.mono,
+                  fontSize: 10.5,
+                  letterSpacing: 1.2,
+                  height: 1.6,
+                  color: p.accent,
+                ),
+              ),
             if (thinking != null && thinking!.isNotEmpty)
               Text(
                 thinking!,
@@ -830,6 +1069,127 @@ class _Progress extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Ein Textfeld im Stil der Eingabemaske. Vier davon statt eines großen
+/// Kastens — die Trennung ist Teil der Frage, nicht Zierde.
+class _Feld extends StatelessWidget {
+  const _Feld({
+    required this.controller,
+    required this.enabled,
+    required this.minLines,
+    required this.maxLines,
+    required this.hint,
+  });
+
+  final TextEditingController controller;
+  final bool enabled;
+  final int minLines;
+  final int maxLines;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppTheme.paletteOf(context);
+    return TextField(
+      controller: controller,
+      minLines: minLines,
+      maxLines: maxLines,
+      enabled: enabled,
+      style: TextStyle(
+        fontFamily: Metrics.mono,
+        fontSize: 11.5,
+        height: 1.6,
+        color: p.fg,
+      ),
+      decoration: InputDecoration(hintText: hint),
+    );
+  }
+}
+
+/// Minuten pro Tag und Tage pro Woche.
+///
+/// Als Auswahl und nicht als Freitext: aus „ungefähr eine halbe Stunde" muss
+/// der Server sonst eine Zahl raten, und an dieser Zahl hängt, wie viele
+/// Übungen in eine Einheit passen.
+class _Zeit extends StatelessWidget {
+  const _Zeit({
+    required this.minutenProTag,
+    required this.tageProWoche,
+    required this.enabled,
+    required this.onMinuten,
+    required this.onTage,
+  });
+
+  static const minuten = [10, 15, 20, 30, 45, 60, 90, 120];
+  static const tage = [1, 2, 3, 4, 5, 6, 7];
+
+  final int minutenProTag;
+  final int tageProWoche;
+  final bool enabled;
+  final ValueChanged<int> onMinuten;
+  final ValueChanged<int> onTage;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppTheme.paletteOf(context);
+
+    Widget zeile(String titel, List<int> werte, int gewaehlt,
+        String Function(int) beschriften, ValueChanged<int> onTap) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            titel,
+            style: TextStyle(
+              fontFamily: Metrics.mono,
+              fontSize: 10,
+              letterSpacing: 1.2,
+              color: p.fgDim,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final wert in werte)
+                InkWell(
+                  onTap: enabled ? () => onTap(wert) : null,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: wert == gewaehlt ? p.accent : p.border,
+                        width: Metrics.line,
+                      ),
+                    ),
+                    child: Text(
+                      beschriften(wert),
+                      style: TextStyle(
+                        fontFamily: Metrics.mono,
+                        fontSize: 11,
+                        color: wert == gewaehlt ? p.accent : p.fgDim,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        zeile('MINUTEN AM TAG', minuten, minutenProTag, (v) => '$v', onMinuten),
+        const SizedBox(height: 12),
+        zeile('TAGE DIE WOCHE', tage, tageProWoche, (v) => '$v', onTage),
+      ],
     );
   }
 }

@@ -55,20 +55,128 @@ class PlanWriting extends PlanEvent {
   final int chars;
 }
 
+/// Welcher Schritt der Pipeline gerade läuft.
+///
+/// Zwischen Architekt und fertigem Plan vergehen bei fünfzehn Bedarfen
+/// Minuten, in denen nichts Lesbares entsteht. Ohne dieses Ereignis säße der
+/// Nutzer vor einem Balken, der sich nicht bewegt.
+class PlanSchritt extends PlanEvent {
+  const PlanSchritt({required this.name, this.fertig, this.gesamt});
+
+  final String name;
+  final int? fertig;
+  final int? gesamt;
+
+  String describe() {
+    final was = switch (name) {
+      'architekt' => 'Aufbau des Programms',
+      'bedarfe' => 'Übungen zusammenfassen',
+      'retrieval' => 'Bibliothek durchsuchen',
+      'kurator' => 'Übungen ausfüllen',
+      'speichern' => 'Neues sichern',
+      'zusammenbau' => 'Plan zusammensetzen',
+      _ => name,
+    };
+    if (fertig == null || gesamt == null) return was;
+    return '$was (${fertig! + 1}/$gesamt)';
+  }
+}
+
+/// Was ein Lauf mit der Bibliothek gemacht hat.
+class Kennzahlen {
+  const Kennzahlen({
+    required this.bedarfe,
+    required this.reuse,
+    required this.neu,
+  });
+
+  final int bedarfe;
+  final int reuse;
+  final int neu;
+
+  static Kennzahlen fromJson(Map<String, dynamic> json) => Kennzahlen(
+    bedarfe: (json['bedarfe'] as num?)?.round() ?? 0,
+    reuse: (json['reuse'] as num?)?.round() ?? 0,
+    neu: (json['neu'] as num?)?.round() ?? 0,
+  );
+}
+
 /// Ein fertiger Plan.
 class PlanDone extends PlanEvent {
-  const PlanDone(this.bundle, {this.reused = const []});
+  const PlanDone(this.bundle, {this.kennzahlen});
 
   final Bundle bundle;
 
-  /// Was aus dem geteilten Pool übernommen wurde.
-  final List<String> reused;
+  /// Wie viel aus der Bibliothek kam und wie viel neu entstand.
+  final Kennzahlen? kennzahlen;
+
+  /// Wie viele Übungen aus dem Bestand übernommen wurden.
+  int get uebernommen => kennzahlen?.reuse ?? 0;
 }
 
 /// Eine fertige Überarbeitung — Änderungen, kein neuer Plan.
 class PlanRevised extends PlanEvent {
   const PlanRevised(this.patch);
   final PlanPatch patch;
+}
+
+/// Die vier Felder vor dem Start (Spec §3).
+///
+/// Ohne das Equipment-Feld erzeugt die KI im Zweifel den kleinsten gemeinsamen
+/// Nenner — bei „ich will einen Gym-Plan" also ein Programm ohne Geräte.
+class Eingabe {
+  const Eingabe({
+    required this.vorhaben,
+    required this.stand,
+    required this.minutenProTag,
+    required this.tageProWoche,
+    required this.equipment,
+  });
+
+  final String vorhaben;
+  final String stand;
+  final int minutenProTag;
+  final int tageProWoche;
+  final String equipment;
+
+  Map<String, dynamic> toJson() => {
+    'vorhaben': vorhaben,
+    'stand': stand,
+    'minuten_pro_tag': minutenProTag,
+    'tage_pro_woche': tageProWoche,
+    'equipment': equipment,
+  };
+}
+
+/// Das Ergebnis der Diagnose: was der Server verstanden hat, und was er noch
+/// wissen will.
+///
+/// Das Problemmodell selbst bleibt auf dem Server. Käme es hier durch und
+/// wieder zurück, wäre es Nutzereingabe — und damit manipulierbar.
+class Diagnose {
+  const Diagnose({
+    required this.laufId,
+    required this.kernproblem,
+    required this.rueckfragen,
+  });
+
+  final String laufId;
+  final String kernproblem;
+  final List<String> rueckfragen;
+
+  bool get hatFragen => rueckfragen.isNotEmpty;
+
+  static Diagnose fromJson(Map<String, dynamic> json) {
+    final modell = json['problemmodell'] as Map<String, dynamic>? ?? const {};
+    return Diagnose(
+      laufId: json['lauf_id'] as String? ?? '',
+      kernproblem: modell['kernproblem'] as String? ?? '',
+      rueckfragen: [
+        for (final f in json['rueckfragen'] as List<dynamic>? ?? const [])
+          if (f is String) f,
+      ],
+    );
+  }
 }
 
 /// Was das Konto noch hergibt.
@@ -165,32 +273,47 @@ class PlanService {
           headers: {'authorization': 'Bearer $token'},
         )
         .timeout(const Duration(seconds: 20));
+    final text = _text(response);
     if (response.statusCode != 200) {
-      throw PlanException(
-        _message(response.body, response.statusCode),
-        code: _code(response.body),
-      );
+      throw PlanException(_message(text, response.statusCode), code: _code(text));
     }
-    return Quota.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return Quota.fromJson(jsonDecode(text) as Map<String, dynamic>);
   }
 
-  Stream<PlanEvent> generatePlan(String request) {
-    if (request.trim().isEmpty) {
-      return Stream.error(
-        const PlanException('Beschreib erst, worum es gehen soll.'),
-      );
+  /// Schritt [1]: die Diagnose. Kann bis zu drei Rückfragen zurückgeben.
+  Future<Diagnose> starteLauf(Eingabe eingabe) async {
+    if (eingabe.vorhaben.trim().isEmpty) {
+      throw const PlanException('Beschreib erst, was du können möchtest.');
     }
-    return _stream('/v1/generate', {'request': request}, (done) {
+    return Diagnose.fromJson(await _post('/v1/laeufe', eingabe.toJson()));
+  }
+
+  /// Schritt [1b]: dieselbe Diagnose noch einmal, mit den Antworten.
+  ///
+  /// Übersprungene Fragen gehen als `null` mit — die Reihenfolge entspricht
+  /// den Fragen aus [Diagnose.rueckfragen].
+  Future<Diagnose> beantworteRueckfragen(
+    String laufId,
+    List<String?> antworten,
+  ) async {
+    return Diagnose.fromJson(
+      await _post('/v1/laeufe/$laufId/antworten', {'antworten': antworten}),
+    );
+  }
+
+  /// Schritte [2] bis [5]. Dauert am längsten und läuft deshalb als Strom.
+  Stream<PlanEvent> erzeugePlan(String laufId) {
+    return _stream('/v1/laeufe/$laufId/plan', const {}, (done) {
       final raw = done['bundle'];
       if (raw is! Map<String, dynamic>) {
         throw const PlanException('Es kam kein Plan zurück.');
       }
+      final zahlen = done['kennzahlen'];
       return PlanDone(
         _bundle(raw),
-        reused: [
-          for (final id in done['reused'] as List<dynamic>? ?? const [])
-            if (id is String) id,
-        ],
+        kennzahlen: zahlen is Map<String, dynamic>
+            ? Kennzahlen.fromJson(zahlen)
+            : null,
       );
     });
   }
@@ -203,19 +326,57 @@ class PlanService {
     if (feedback.trim().isEmpty) {
       return Stream.error(const PlanException('Sag, was nicht passt.'));
     }
-    return _stream(
-      '/v1/revise',
-      // Ohne den persönlichen Teil: er ist Ausgabe, nicht Eingabe, und würde
-      // die Überarbeitung nur auf sich selbst beziehen.
-      {'bundle': bundle.shareable.toJson(), 'feedback': feedback},
-      (done) {
-        final raw = done['patch'];
-        if (raw is! Map<String, dynamic>) {
-          throw const PlanException('Es kamen keine Änderungen zurück.');
-        }
-        return PlanRevised(PlanPatch.fromJson(raw));
-      },
-    );
+    // Als Strom, obwohl nur eine Antwort kommt: die Oberfläche behandelt
+    // Erzeugen und Überarbeiten gleich, und ein Patch ist zu kurz, als dass
+    // sich ein Ereignisstrom dafür lohnte.
+    return _einzeln(() async {
+      final antwort = await _post(
+        '/v1/revise',
+        // Ohne den persönlichen Teil: er ist Ausgabe, nicht Eingabe, und würde
+        // die Überarbeitung nur auf sich selbst beziehen.
+        {'bundle': bundle.shareable.toJson(), 'feedback': feedback},
+      );
+      final raw = antwort['patch'];
+      if (raw is! Map<String, dynamic>) {
+        throw const PlanException('Es kamen keine Änderungen zurück.');
+      }
+      return PlanRevised(PlanPatch.fromJson(raw));
+    });
+  }
+
+  static Stream<PlanEvent> _einzeln(Future<PlanEvent> Function() auftrag) async* {
+    yield await auftrag();
+  }
+
+  Future<Map<String, dynamic>> _post(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final http.Response antwort;
+    try {
+      antwort = await _client
+          .post(
+            Uri.parse('$baseUrl$path'),
+            headers: {
+              'authorization': 'Bearer $token',
+              'content-type': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(minutes: 2));
+    } on Exception catch (e) {
+      throw PlanException('Kein Zugriff auf die LevelUp-API: $e');
+    }
+
+    final text = _text(antwort);
+    if (antwort.statusCode != 200) {
+      throw PlanException(_message(text, antwort.statusCode), code: _code(text));
+    }
+    final decoded = jsonDecode(text);
+    if (decoded is! Map<String, dynamic>) {
+      throw const PlanException('Die Antwort ließ sich nicht lesen.');
+    }
+    return decoded;
   }
 
   /// Nimmt den Plan an: er wandert in die geteilte Bibliothek.
@@ -236,10 +397,8 @@ class PlanService {
         .timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
-      throw PlanException(
-        _message(response.body, response.statusCode),
-        code: _code(response.body),
-      );
+      final text = _text(response);
+      throw PlanException(_message(text, response.statusCode), code: _code(text));
     }
   }
 
@@ -291,6 +450,12 @@ class PlanService {
           yield PlanThinking(event['text'] as String? ?? '');
         case 'writing':
           yield PlanWriting((event['chars'] as num?)?.round() ?? 0);
+        case 'schritt':
+          yield PlanSchritt(
+            name: event['name'] as String? ?? '',
+            fertig: (event['fertig'] as num?)?.round(),
+            gesamt: (event['gesamt'] as num?)?.round(),
+          );
         case 'search':
           yield PlanSearching(
             tool: event['tool'] as String? ?? '',
@@ -324,6 +489,16 @@ class PlanService {
       throw PlanException('Der Plan ließ sich nicht lesen: $e');
     }
   }
+
+  /// Der Rumpf als Text.
+  ///
+  /// `response.body` entscheidet anhand des `charset` im Content-Type, und
+  /// ohne Angabe fällt das http-Paket auf Latin-1 zurück — aus „Übung" würde
+  /// „Ãbung". Der Server schickt UTF-8, also wird auch so gelesen.
+  /// `allowMalformed`, weil ein Dekodierfehler sonst die eigentliche Meldung
+  /// verdeckt: statt „Der Plan ist zu groß" stünde da eine FormatException.
+  static String _text(http.Response antwort) =>
+      utf8.decode(antwort.bodyBytes, allowMalformed: true);
 
   static String? _code(String body) {
     try {

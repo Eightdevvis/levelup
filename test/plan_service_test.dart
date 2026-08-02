@@ -182,7 +182,7 @@ void main() {
     });
   });
 
-  group('generatePlan', () {
+  group('erzeugePlan', () {
     test('meldet Denken, Suchen, Schreiben und liefert den Plan', () async {
       final events = await _events(
         _service(
@@ -198,10 +198,10 @@ void main() {
             {
               'type': 'done',
               'bundle': _bundle,
-              'reused': ['geige-rhythmus-klopfen'],
+              'kennzahlen': {'bedarfe': 4, 'reuse': 1, 'neu': 3},
             },
           ]),
-        ).generatePlan('Bach lesen'),
+        ).erzeugePlan('lauf_1'),
       );
 
       expect(events.whereType<PlanThinking>().single.text,
@@ -214,7 +214,7 @@ void main() {
 
       final done = events.whereType<PlanDone>().single;
       expect(done.bundle.programs.single.id, 'bach-lesen');
-      expect(done.reused, ['geige-rhythmus-klopfen']);
+      expect(done.uebernommen, 1);
       expect(
         done.bundle.personalNote,
         'Dein eigentliches Problem ist die Notation, nicht Bach.',
@@ -233,7 +233,7 @@ void main() {
             },
             {'type': 'done', 'bundle': _bundle},
           ]),
-        ).generatePlan('irgendwas'),
+        ).erzeugePlan('lauf_1'),
       );
 
       expect(
@@ -253,7 +253,7 @@ void main() {
                 'message': 'Daraus wird kein Übungsplan.',
               },
             ]),
-          ).generatePlan('schreib mir ein Gedicht'),
+          ).erzeugePlan('lauf_1'),
         ),
         throwsA(
           isA<PlanException>()
@@ -274,7 +274,7 @@ void main() {
               },
             }),
             status: 402,
-          ).generatePlan('Bach lesen'),
+          ).erzeugePlan('lauf_1'),
         ),
         throwsA(
           isA<PlanException>().having(
@@ -293,7 +293,7 @@ void main() {
             _sse([
               {'type': 'thinking', 'text': 'Ich überlege...'},
             ]),
-          ).generatePlan('Bach lesen'),
+          ).erzeugePlan('lauf_1'),
         ),
         throwsA(
           isA<PlanException>().having(
@@ -305,7 +305,7 @@ void main() {
       );
     });
 
-    test('eine leere Anfrage geht gar nicht erst raus', () async {
+    test('ein leeres Vorhaben geht gar nicht erst raus', () async {
       var called = false;
       final service = PlanService(
         baseUrl: 'https://api.test',
@@ -317,10 +317,33 @@ void main() {
       );
 
       await expectLater(
-        service.generatePlan('   ').toList(),
+        service.starteLauf(
+          const Eingabe(
+            vorhaben: '   ',
+            stand: '',
+            minutenProTag: 30,
+            tageProWoche: 4,
+            equipment: '',
+          ),
+        ),
         throwsA(isA<PlanException>()),
       );
       expect(called, isFalse);
+    });
+
+    test('meldet den Schritt, damit der Balken sich bewegt', () async {
+      final events = await _events(
+        _service(
+          _sse([
+            {'type': 'schritt', 'name': 'kurator', 'fertig': 2, 'gesamt': 5},
+            {'type': 'done', 'bundle': _bundle},
+          ]),
+        ).erzeugePlan('lauf_1'),
+      );
+
+      final schritt = events.whereType<PlanSchritt>().single;
+      expect(schritt.describe(), contains('3/5'));
+      expect(schritt.describe(), contains('Übungen ausfüllen'));
     });
 
     test('Bruchstücke im Strom kippen den Lauf nicht', () async {
@@ -330,7 +353,7 @@ void main() {
             {'type': 'done', 'bundle': _bundle},
           ])}';
 
-      final events = await _events(_service(noisy).generatePlan('Bach lesen'));
+      final events = await _events(_service(noisy).erzeugePlan('lauf_1'));
       expect(events.whereType<PlanDone>().single.bundle.programs, hasLength(1));
     });
   });
@@ -339,20 +362,14 @@ void main() {
     test('liefert Änderungen statt eines neuen Plans', () async {
       final events = await _events(
         _service(
-          _sse([
-            {
-              'type': 'done',
-              'patch': {
-                'personalNote': 'Die Fingerübung ist raus.',
-                'operations': [
-                  {
-                    'op': 'removeExercise',
-                    'exerciseId': 'geige-rhythmus-klopfen',
-                  },
-                ],
-              },
+          jsonEncode({
+            'patch': {
+              'personalNote': 'Die Fingerübung ist raus.',
+              'operations': [
+                {'op': 'removeExercise', 'exerciseId': 'geige-rhythmus-klopfen'},
+              ],
             },
-          ]),
+          }),
         ).revisePlan(Bundle.fromJson(Map.from(_bundle)), 'zu viel'),
       );
 
@@ -365,12 +382,9 @@ void main() {
       Map<String, dynamic>? sent;
       await _events(
         _service(
-          _sse([
-            {
-              'type': 'done',
-              'patch': {'operations': []},
-            },
-          ]),
+          jsonEncode({
+            'patch': {'operations': <Map<String, dynamic>>[]},
+          }),
           onRequest: (path, body) {
             expect(path, '/v1/revise');
             sent = body;
