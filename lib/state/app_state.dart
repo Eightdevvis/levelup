@@ -197,6 +197,10 @@ class AppState extends ChangeNotifier {
   }
 
   /// Entfernt Übungen und Einheiten, auf die kein Programm mehr zeigt.
+  ///
+  /// Bewusst **ohne** Bedienung in der App: Aufräumen und Zurücksetzen sind
+  /// Werkzeuge für die Entwicklung, keine Knöpfe für den Nutzer. Wer sie
+  /// braucht, ruft sie von hier aus auf.
   Future<int> removeOrphans() async {
     final weg = _snapshot.library.orphans;
     final anzahl = weg.exercises.length + weg.routines.length;
@@ -213,6 +217,10 @@ class AppState extends ChangeNotifier {
   /// Gedacht fürs Ausprobieren — wer den Ablauf mehrfach durchspielt, will
   /// nicht die Reste von fünf Versuchen im Tag-Pool haben. Die Einstellungen
   /// bleiben; sie haben mit den Inhalten nichts zu tun.
+  ///
+  /// Auch das steht dem Nutzer nicht zur Verfügung. Ein Knopf, der ohne
+  /// Umschweife die ganze Bibliothek leert, gehört nicht in eine App, in der
+  /// die Übungen der wertvolle Teil sind.
   Future<void> resetEverything() async {
     _snapshot = AppSnapshot(settings: _snapshot.settings);
     notifyListeners();
