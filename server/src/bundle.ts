@@ -71,7 +71,7 @@ interface Program {
   id: string;
   name: string;
   description?: string;
-  domain: string;
+  /** Kein `domain`: die Tätigkeit steht als erster Tag, wie bei der Übung. */
   tags: string[];
   phases: AppPhase[];
   rationale?: string;
@@ -92,8 +92,8 @@ export interface Zusammenbau {
   problemmodell: Problemmodell;
   eingabe: Eingabe;
   programmId: string;
-  /** Tags, die im Vokabular als Tätigkeit geführt werden. Daraus wird
-   *  `Exercise.domain` — die App hat kein eigenes Bereichsfeld. */
+  /** Tags, die im Vokabular als Tätigkeit geführt werden. Sie wandern beim
+   *  Zusammenbau nach vorn — die App liest die Tätigkeit als ersten Tag. */
   taetigkeiten: Set<string>;
 }
 
@@ -142,14 +142,12 @@ export function baueBundle(z: Zusammenbau): Bundle {
   });
 
   const alleTags = [...benutzte].flatMap((id) => z.uebungen.get(id)?.tags ?? []);
-  const domain = ersteTaetigkeit(alleTags, z.taetigkeiten);
 
   const programm: Program = {
     id: z.programmId,
     name: z.architektur.programm_titel,
     description: z.architektur.programm_beschreibung,
-    domain,
-    tags: [...new Set(alleTags)],
+    tags: sortiertNachTaetigkeit([...new Set(alleTags)], z.taetigkeiten),
     phases: phasen,
     rationale: begruendung(z.problemmodell),
   };
@@ -216,12 +214,6 @@ function sortiertNachTaetigkeit(tags: string[], taetigkeiten: Set<string>): stri
   const index = tags.findIndex((t) => taetigkeiten.has(t));
   if (index <= 0) return tags;
   return [tags[index], ...tags.filter((_, i) => i !== index)];
-}
-
-/** `Exercise.domain` ist ein freies Tag. Genommen wird das erste, das im
- *  Vokabular als Tätigkeit geführt wird — sonst der Vorgabewert der App. */
-function ersteTaetigkeit(tags: readonly string[], taetigkeiten: Set<string>): string {
-  return tags.find((t) => taetigkeiten.has(t)) ?? 'allgemein';
 }
 
 /** Warum der Plan so aussieht, wie er aussieht — ohne persönliche Angaben,

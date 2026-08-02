@@ -488,7 +488,6 @@ Program _programWith(
   id: program.id,
   name: name ?? program.name,
   description: description ?? program.description,
-  domain: program.domain,
   author: program.author,
   tags: program.tags,
   phases: phases ?? program.phases,

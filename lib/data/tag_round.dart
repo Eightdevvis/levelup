@@ -1,4 +1,5 @@
 import '../model/exercise.dart';
+import 'demo_bundle.dart';
 
 /// Runde 1 des kostenlosen Weges: aus einer KI-Antwort werden Übungen.
 ///
@@ -29,6 +30,9 @@ class TagCount {
 List<TagCount> tagPool(Iterable<Exercise> exercises) {
   final counts = <String, int>{};
   for (final exercise in exercises) {
+    // Der Prüfstand bleibt draußen: seine Tags heißen „demo" und „player"
+    // und hätten in einem echten Plan nichts verloren.
+    if (istDemo(exercise.id)) continue;
     for (final tag in exercise.tags) {
       final clean = normalizeTag(tag);
       if (clean.isEmpty) continue;
@@ -340,7 +344,9 @@ ResolveResult resolveRequests(
   RoundOneResult round,
   Iterable<Exercise> library,
 ) {
-  final bestand = <Exercise>[...library];
+  // Auch beim Auflösen übergangen — sonst setzte ein Zufallstreffer eine
+  // Demo-Übung in einen echten Plan.
+  final bestand = <Exercise>[...library.where((e) => !istDemo(e.id))];
   final resolved = <Resolved>[];
   final unmatched = <List<String>>[];
 

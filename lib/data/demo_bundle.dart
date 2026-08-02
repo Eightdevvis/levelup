@@ -5,6 +5,16 @@ import '../model/progression.dart';
 import '../model/set_spec.dart';
 import '../model/target.dart';
 
+/// Woran der Prüfstand zu erkennen ist.
+///
+/// Nicht nur Kosmetik: Tag-Pool und Auflösung übergehen alles mit diesem
+/// Vorsatz. Sonst bäte der Chat-Prompt die KI, Tags wie „player" oder „demo"
+/// zu bevorzugen, und ein echter Plan bekäme eine Demo-Übung eingesetzt.
+const String kDemoIdPrefix = 'demo-';
+
+/// Ob eine Kennung zum Prüfstand gehört.
+bool istDemo(String id) => id.startsWith(kDemoIdPrefix);
+
 /// Ein Programm, das jede Funktion der App einmal zeigt.
 ///
 /// Kein Inhalt, den jemand üben soll — ein Prüfstand. Jede Übung und jede
@@ -13,14 +23,12 @@ import '../model/target.dart';
 /// mehrere Sätze, Pausen, Notiz, Kür, beide Steigerungsarten, beide
 /// Tagespläne, Medien.
 ///
-/// Wird nicht beim Start geladen. Die Bibliothek startet leer und wächst aus
-/// dem, was der Nutzer importiert — ein automatisch eingespieltes Demoprogramm
-/// würde genau den Tag-Pool verunreinigen, aus dem der Chat-Import schöpft.
-/// Deshalb ein Menüeintrag in der Übungsbibliothek, direkt neben dem
-/// Zurücksetzen: erst leeren, dann laden, dann prüfen.
+/// Wird nicht beim Start geladen, sondern über das Menü der Übungsbibliothek.
+/// Automatisch eingespielt stünde es beim ersten Öffnen im Weg, und niemand
+/// wüsste, ob die App etwas kann oder nur etwas mitbringt.
 ///
-/// Alle Kennungen beginnen mit `demo-`. So ist im Bestand auf einen Blick zu
-/// sehen, was Prüfstand ist und was echter Inhalt.
+/// Alle Kennungen beginnen mit [kDemoIdPrefix]. So ist im Bestand auf einen
+/// Blick zu sehen, was Prüfstand ist und was echter Inhalt.
 Bundle demoBundle() => Bundle(
   exercises: _exercises,
   routines: _routines,
@@ -215,7 +223,6 @@ const _program = Program(
   description:
       'Kein Übungsplan, sondern ein Prüfstand. Jede Phase führt etwas anderes '
       'vor — Zieltypen, Steigerung, Tagespläne. Zum Ansehen, nicht zum Üben.',
-  domain: 'demo',
   tags: ['demo', 'dauer', 'wiederholungen', 'quote', 'offen'],
   rationale:
       'Diese Begründung steht hier, damit sichtbar ist, wo der Text landet, '

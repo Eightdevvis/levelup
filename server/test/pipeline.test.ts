@@ -239,7 +239,8 @@ describe('Bundle (Arbeitsliste 10)', () => {
 
     expect(bundle.routines).toHaveLength(4);
     expect(bundle.programs[0].name).toBe('Gehör zuerst');
-    expect(bundle.programs[0].domain).toBe('geige');
+    // Kein domain-Feld: die Tätigkeit steht als erster Tag.
+    expect(bundle.programs[0].tags[0]).toBe('geige');
   });
 
   it('übersetzt die Felder, wie Arbeitsliste 10 es vorgibt', async () => {

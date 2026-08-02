@@ -258,9 +258,8 @@ final _violinRoutines = <Routine>[
 final _bachProgram = Program(
   id: 'p-bach-lesen',
   name: 'Bach lesen lernen',
-  domain: 'geige',
   author: 'Beispielplan',
-  tags: const ['notation', 'theorie', 'bach'],
+  tags: const ['geige', 'notation', 'theorie', 'bach'],
   description:
       'Zwölf Wochen von "ich kann spielen, aber nicht lesen" zu "ich kann mir '
       'einen unbekannten Bach-Satz erschließen".',
@@ -412,8 +411,7 @@ final _earRoutines = <Routine>[
 final _earProgram = Program(
   id: 'p-gehoer',
   name: 'Gehörtraining Grundstock',
-  domain: 'gehoerbildung',
-  tags: const ['gehoer'],
+  tags: const ['gehoerbildung', 'gehoer'],
   description: 'Acht Wochen tägliches Hören mit langsam steigender Hürde.',
   rationale:
       'Gehör wächst über Häufigkeit, nicht über Dauer. Deshalb kurze tägliche '
@@ -601,8 +599,7 @@ final _strengthRoutines = <Routine>[
 final _strengthProgram = Program(
   id: 'p-kraft-basis',
   name: 'Kraft Grundprogramm',
-  domain: 'kraft',
-  tags: const ['kraft', 'ganzkoerper'],
+  tags: const ['kraft', 'kraft', 'ganzkoerper'],
   description: 'Acht Wochen A/B-Rotation mit linearer Steigerung, dann Deload.',
   rationale:
       'Bewusst der klassische Fall, damit sichtbar wird: dieselbe Struktur, die '
@@ -719,8 +716,7 @@ final _artRoutines = <Routine>[
 final _artProgram = Program(
   id: 'p-zeichnen',
   name: 'Zeichnen Grundlagen',
-  domain: 'zeichnen',
-  tags: const ['zeichnen'],
+  tags: const ['zeichnen', 'zeichnen'],
   description: 'Sechs Wochen Grundlagen mit offenen Aufgaben.',
   rationale:
       'Der Beleg, dass auch unmessbare Übungen ins selbe Modell passen: eine '

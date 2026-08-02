@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:programs/data/demo_bundle.dart';
+import 'package:programs/data/tag_round.dart';
+import 'package:programs/model/exercise.dart';
 import 'package:programs/engine/resolver.dart';
 import 'package:programs/model/library.dart';
 import 'package:programs/model/program.dart';
@@ -13,6 +15,8 @@ void main() {
   final bundle = demoBundle();
   final library = const Library().merge(bundle);
   final program = bundle.programs.single;
+
+  _isolationTests();
 
   group('Testprogramm', () {
     test('ist vollständig verdrahtet', () {
@@ -119,5 +123,29 @@ void main() {
       expect(wieder.routines, hasLength(bundle.routines.length));
       expect(wieder.programs.single.totalDays, program.totalDays);
     });
+  });
+}
+
+/// Der Prüfstand darf den Chat-Import nicht verunreinigen.
+void _isolationTests() {
+  test('Demo-Übungen bleiben aus dem Tag-Pool draußen', () {
+    final gemischt = [
+      ...demoBundle().exercises,
+      const Exercise(id: 'echt', name: 'Echt', tags: ['geige', 'intonation']),
+    ];
+    final tags = tagPool(gemischt).map((t) => t.tag);
+
+    expect(tags, containsAll(['geige', 'intonation']));
+    expect(tags, isNot(contains('demo')));
+    expect(tags, isNot(contains('player')));
+  });
+
+  test('und werden auch nicht als Treffer eingesetzt', () {
+    // Genau die Tags einer Demo-Übung angefordert.
+    final round = parseRoundOne('1. ["demo", "dauer", "player"]');
+    final result = resolveRequests(round, demoBundle().exercises);
+
+    expect(result.resolved, isEmpty);
+    expect(result.unmatched, hasLength(1));
   });
 }

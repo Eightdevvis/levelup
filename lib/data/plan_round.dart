@@ -107,8 +107,13 @@ PlanParseResult parseRoundTwo(String raw, List<Resolved> exercises) {
   }
 
   // --- Phasen ---------------------------------------------------------------
+  final programTags = [
+    for (final t in _list(programJson['tags']))
+      if (_text(t) != null) normalizeTag(_text(t)!),
+  ].where((t) => t.isNotEmpty).toList();
+
   final programId = slugFor(
-    _text(programJson['domain']) ?? '',
+    programTags.isEmpty ? '' : programTags.first,
     _text(programJson['name']) ?? 'programm',
   );
 
@@ -168,10 +173,10 @@ PlanParseResult parseRoundTwo(String raw, List<Resolved> exercises) {
     id: programId,
     name: _text(programJson['name']) ?? 'Programm',
     description: _text(programJson['description']),
-    domain: normalizeTag(_text(programJson['domain']) ?? '').isEmpty
-        ? 'allgemein'
-        : normalizeTag(_text(programJson['domain'])!),
+    // Die Tätigkeit steht als erster Tag — genau wie bei der Übung. Was die
+    // KI angegeben hat, kommt nach vorn, der Rest sind die Tags der Übungen.
     tags: {
+      ...programTags,
       for (final id in benutzt) ...?byId[id]?.tags,
     }.toList(),
     phases: phases,

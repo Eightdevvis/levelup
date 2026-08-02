@@ -257,7 +257,6 @@ class Program {
     required this.id,
     required this.name,
     this.description,
-    this.domain = 'allgemein',
     this.author,
     this.tags = const [],
     this.phases = const [],
@@ -267,9 +266,15 @@ class Program {
   final String id;
   final String name;
   final String? description;
-  final String domain;
   final String? author;
   final List<String> tags;
+
+  /// Die Tätigkeit, abgeleitet aus dem ersten Tag.
+  ///
+  /// Wie bei der Übung: ein eigenes Feld dafür gibt es nicht mehr. Was
+  /// zusammengehört, ergibt sich aus den Tags — sonst pflegt man dieselbe
+  /// Angabe an zwei Stellen und sie laufen auseinander.
+  String get domain => tags.isEmpty ? 'allgemein' : tags.first;
   final List<Phase> phases;
 
   /// Warum der Plan so aussieht, wie er aussieht. Bei AI-generierten
@@ -288,25 +293,35 @@ class Program {
     'id': id,
     'name': name,
     if (description != null) 'description': description,
-    'domain': domain,
     if (author != null) 'author': author,
     if (tags.isNotEmpty) 'tags': tags,
     'phases': phases.map((e) => e.toJson()).toList(),
     if (rationale != null) 'rationale': rationale,
   };
 
-  static Program fromJson(Map<String, dynamic> json) => Program(
-    id: json['id'] as String,
-    name: json['name'] as String,
-    description: json['description'] as String?,
-    domain: json['domain'] as String? ?? 'allgemein',
-    author: json['author'] as String?,
-    tags: (json['tags'] as List<dynamic>? ?? const [])
+  static Program fromJson(Map<String, dynamic> json) {
+    final tags = (json['tags'] as List<dynamic>? ?? const [])
         .map((e) => e.toString())
-        .toList(growable: false),
-    phases: (json['phases'] as List<dynamic>? ?? const [])
-        .map((e) => Phase.fromJson(e as Map<String, dynamic>))
-        .toList(growable: false),
-    rationale: json['rationale'] as String?,
-  );
+        .toList();
+    // Die alte `domain` geht nicht verloren, sie wird der erste Tag.
+    final alteDomain = (json['domain'] as String?)?.trim();
+    if (alteDomain != null &&
+        alteDomain.isNotEmpty &&
+        alteDomain != 'allgemein' &&
+        !tags.contains(alteDomain)) {
+      tags.insert(0, alteDomain);
+    }
+
+    return Program(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      author: json['author'] as String?,
+      tags: tags,
+      phases: (json['phases'] as List<dynamic>? ?? const [])
+          .map((e) => Phase.fromJson(e as Map<String, dynamic>))
+          .toList(growable: false),
+      rationale: json['rationale'] as String?,
+    );
+  }
 }
