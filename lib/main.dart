@@ -11,6 +11,12 @@ void main() {
   runApp(ProgramsApp(state: state));
 }
 
+/// Wie viel größer als vorgesehen alles gesetzt wird.
+///
+/// 1,0 war die ursprüngliche Bildsprache — auf einem E-Ink-Schirm mit
+/// Graustufen las sie sich zu fein. Hier drehen, nicht in den Bildschirmen.
+const double kTextScale = 1.15;
+
 /// Reicht den [AppState] durch den Baum. Bewusst ohne externe
 /// State-Management-Bibliothek — ein Datenstamm, ein Notifier.
 class AppScope extends InheritedNotifier<AppState> {
@@ -52,6 +58,21 @@ class _ProgramsAppState extends State<ProgramsApp> {
         // Papier als Standard. Die Palette stammt aus ZENTRALE, wo `day` der
         // Normalfall ist und `night` die Ausnahme.
         themeMode: ThemeMode.light,
+        // Ein Regler statt hundertdreißig Literale.
+        //
+        // Die Schriftgrößen stehen als feste Werte in den Bildschirmen, weil
+        // die Bildsprache aus festen Größen besteht. Sie waren auf E-Ink
+        // durchweg einen Tick zu klein. `clamp` statt fester Skalierung: wer
+        // im System größere Schrift eingestellt hat, behält sie.
+        builder: (context, child) {
+          final media = MediaQuery.of(context);
+          return MediaQuery(
+            data: media.copyWith(
+              textScaler: media.textScaler.clamp(minScaleFactor: kTextScale),
+            ),
+            child: child!,
+          );
+        },
         home: FutureBuilder<void>(
           future: _ready,
           builder: (context, snapshot) {
