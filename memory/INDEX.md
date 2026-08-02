@@ -11,22 +11,30 @@ hier sofort mitziehen, sonst tote Links.
 
 ## Themen
 
+Geschrieben:
+
 | Thema                                   | Pfad                          |
 |-----------------------------------------|-------------------------------|
 | Projekt-Überblick & Status              | memory/ueberblick.md          |
+| Wie ein Plan entsteht (Backend Rev. 2)  | memory/backend.md             |
+| Was noch offen ist                      | `OFFEN.md` (Repo-Wurzel)      |
+| Wie der Generator arbeiten soll         | `lernprogramm-generator-spec.md` (Repo-Wurzel) |
+
+Vorgesehen, aber noch nicht geschrieben — hier stehen sie, damit klar ist,
+dass sie fehlen, und nicht, damit jemand vergeblich klickt:
+
+| Thema                                   | Pfad                          |
+|-----------------------------------------|-------------------------------|
 | Datenmodell (Programm → Phase → Einheit → Übung) | memory/datenmodell.md |
-| Was eine Übung ist (Spec + Prüfer)      | memory/uebungen.md            |
 | App-Architektur (State, Store, Resolver)| memory/architektur.md         |
 | Bildschirme & was jeder zeigt           | memory/screens.md             |
-| Server (Cloudflare Worker, D1, Endpunkte)| memory/server.md             |
-| Planbau (Agent-Schleife, Modell, Recycling)| memory/planbau.md          |
-| Der geteilte Pool (Suche, souverän/persönlich)| memory/pool.md           |
-| Überarbeitung (Patch statt Neuschreiben)| memory/ueberarbeitung.md      |
 | Bildsprache & Lesbarkeit (E-Ink)        | memory/design.md              |
 | Tests (was geprüft wird, welche Fallen) | memory/tests.md               |
 | Bauen & Ausliefern (APK, Deploy)        | memory/bauen_ausliefern.md    |
-| Claude-spezifische Hinweise             | memory/claude_hinweise.md     |
-| Was noch offen ist                      | `OFFEN.md` (Repo-Wurzel)      |
+
+Gestrichen: `uebungen.md`, `server.md`, `planbau.md`, `pool.md` — sie hätten
+den Werkzeug-Agenten und den geteilten Pool beschrieben. Beides gibt es seit
+Rev. 2 nicht mehr; was an ihre Stelle tritt, steht in `backend.md`.
 
 `OFFEN.md` liegt bewusst außerhalb: es ist keine Doku des Ist-Zustands,
 sondern eine Liste dessen, was fehlt – und soll beim Öffnen des Repos

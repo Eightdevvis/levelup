@@ -1,6 +1,6 @@
 # Was noch offen ist
 
-Stand: 31.07.2026, nach dem Ausrollen von Pool und Einspruch.
+Stand: 02.08.2026, nach dem Umbau des Backends auf Spec Rev. 2.
 
 Sortiert danach, wann es weh tut — nicht danach, wie viel Arbeit es ist.
 
@@ -24,11 +24,19 @@ Nachweis beim ersten Aufruf (Turnstile); oder erst dann Freikontingent, wenn ein
 App-Store-Kaufbeleg vorliegt. Das Erste ist in einer Stunde gebaut und deckt 95 %
 der Fälle.
 
-### 2. Jeder kann in den geteilten Pool schreiben
+### 2. Jeder kann in die geteilte Bibliothek schreiben
 
 `POST /v1/plans/accept` nimmt jedes Bundle an, das nach einem Plan aussieht. Es
 gibt keinen Nachweis, dass der Plan aus einem eigenen Lauf stammt. Wer will,
 kippt Unsinn in die Bibliothek, aus der dann alle anderen schöpfen.
+
+**Seit Rev. 2 dringlicher.** Übungen wandern jetzt schon während des Laufs in
+`uebungen`, nicht erst beim Annehmen — das ist so gewollt (§1), heißt aber:
+Punkt 1 oben deckelt nicht mehr nur die Kosten, sondern auch, wie viel Unsinn
+in der Bibliothek landen kann. Wer beliebig viele Geräte anlegt, kann beliebig
+viele Bausteine erzeugen. Das Zurückstellen (`status = 'zurueckgestellt'`) und
+die Herkunft (`source_device_id`) sind da, das Aufräumen von Hand ist es
+noch nicht.
 
 Abgefedert ist es nur halb: jede Zeile trägt ihre `device_id`, eine schlechte
 Quelle lässt sich also finden und ausräumen. Das ist Aufräumen im Nachhinein,
@@ -41,6 +49,35 @@ entweder der Server wendet ihn zum Mitschreiben ebenfalls an, oder es reicht ein
 loserer Nachweis (dieses Gerät hatte in den letzten 24 Stunden einen
 erfolgreichen Lauf).
 
+### 14. Der Cloudflare-Plan ist ungeklärt
+
+Ein Lauf mit fünfzehn Bedarfen macht deutlich mehr als 50 Unteranfragen — je
+Bedarf mindestens eine Vectorize-Abfrage, eine D1-Abfrage, ein KI-Aufruf und
+ein Embedding. Workers **Free** erlaubt 50 Unteranfragen und 10 ms CPU,
+Workers **Paid** 10.000 und bis zu 5 Minuten. Auf Free kann die Pipeline nicht
+in einer Anfrage laufen, gleich wie sie zugeschnitten ist.
+
+Gebaut ist alles unter der Annahme **Paid**. Welcher Plan tatsächlich gilt,
+ließ sich von hier aus nicht auslesen — das OAuth-Token von `wrangler` hat
+keine Abrechnungsrechte. Zu tun: nachsehen, und danach an einem echten Lauf
+Unteranfragen und CPU-Zeit messen (`wrangler tail`). Ergibt das mehr als der
+Plan hergibt, muss die Pipeline über mehrere Anfragen gestückelt werden, und
+das ändert den Zuschnitt der Endpunkte.
+
+### 15. Der Grundstock ist noch nicht eingespielt
+
+`server/grundstock/*.json` liegt bereit (12 Bausteine Geige, 12
+Krafttraining), das Skript auch. Vorher fehlen noch: die beiden
+Vectorize-Indizes (`wrangler vectorize create uebungen --dimensions=1024
+--metric=cosine`, dasselbe für `tagvokabular`, plus den Metadaten-Index auf
+`status`), `schema_v3.sql` auf der entfernten Datenbank, und
+`wrangler secret put BETREIBER_TOKEN`.
+
+**Die 1024 sind ungeprüft.** Die Typdefinition von `bge-m3` nennt die
+Vektorlänge nicht; sie steht erst im `shape` der ersten echten Antwort. Stimmt
+sie nicht, nimmt Vectorize die Vektoren nicht an — dann Index löschen und mit
+der richtigen Zahl neu anlegen, bevor Daten drin sind.
+
 ### 3. Datenschutz
 
 Wer den Server betreibt, ist Verantwortlicher im Sinne der DSGVO. Offen:
@@ -50,7 +87,7 @@ Wer den Server betreibt, ist Verantwortlicher im Sinne der DSGVO. Offen:
 - Eine Antwort darauf, wie lange Zeilen in `generations` liegen bleiben
 - Ein Weg, ein Gerät und seine Daten zu löschen. Es gibt derzeit **keinen**
   Endpunkt dafür. Das Gerätetoken ist ein Pseudonym, damit personenbezogen.
-- Der Pool enthält von Nutzern beigesteuerte Inhalte. Auch wenn der persönliche
+- Die Bibliothek enthält von Nutzern beigesteuerte Inhalte. Auch wenn der persönliche
   Teil entfernt wird: die Frage, ob jemand seinen Beitrag zurückziehen kann,
   gehört beantwortet, bevor sie gestellt wird.
 
@@ -91,11 +128,18 @@ Zu ändern wäre es billig — `generations.kind` unterscheidet schon zwischen
 
 ## Irgendwann
 
-### 8. Der Pool wird nie aufgeräumt
+### 8. Die Bibliothek wird nie aufgeräumt — halb erledigt
 
-Es gibt kein Entfernen, keine Qualitätsschwelle, keine Zusammenführung von
-Dubletten. `used_count` sortiert die Suche, mehr passiert damit nicht. Bei
-zweistelligen Zahlen egal, bei vierstelligen nicht.
+Dubletten fängt seit Rev. 2 das Dedupe ab: ab Ähnlichkeit 0,90 landet ein
+Baustein in `pruefliste` statt in der Bibliothek, und `GET /v1/pruefliste`
+zeigt die offenen Fälle. Was fehlt, ist alles darüber hinaus — keine
+Qualitätsschwelle, kein Entfernen außer dem Zurückstellen von Hand, keine
+Zusammenführung zweier Bausteine, die dasselbe meinen und es unter 0,90 tun.
+
+Offen ist auch die Schwelle selbst. 0,90 ist geraten; jede Prüfung
+protokolliert den tatsächlichen Wert, damit sie nach ein paar hundert
+Bausteinen an echten Daten justiert werden kann. Bis dahin ist die Prüfliste
+die einzige Rückmeldung darüber, ob sie zu hoch oder zu niedrig steht.
 
 ### 9. Kennungen können kollidieren
 
@@ -107,45 +151,57 @@ eigene Fassung überschrieben. Der Domänen-Präfix im Prompt
 Sauber wäre, beim Zusammenführen zu erkennen, dass zwei Übungen mit gleicher
 Kennung verschieden sind, und die hereinkommende umzubenennen.
 
-### 10. Die Suche ist absichtlich dumm
+### 10. Die Suche ist jetzt Vektoren — mit einem ungeeichten Gewicht
 
-Stichwörter gegen ein Textfeld, Treffer gezählt. Kein FTS5, keine Vektoren — der
-semantische Teil sitzt im Modell, das die Wörter formuliert und die Treffer
-beurteilt. Das funktioniert nachweislich (vier Suchläufe, deutsch und englisch
-gemischt, 12 von 14 Bausteinen gefunden). Bei fünfstelligem Pool ist
-`src/pool.ts` die Stelle zum Austauschen; die Schnittstelle bleibt.
+Statt Stichwörtern gegen ein Textfeld sucht `src/retrieval.ts` über Embeddings
+und sortiert nach `score * (1 + 0,5 * Jaccard über die Tags)` um. Das Gewicht
+0,5 ist ein Startwert und an echten Daten zu justieren: zu klein, und ein
+Baustein aus fremder Tätigkeit rutscht wegen ähnlicher Formulierung nach oben;
+zu groß, und die Suche findet nichts mehr außerhalb der schon vergebenen Tags.
+Der Test hält den Fall aus §7.2 fest, mehr ist es noch nicht.
 
-### 10b. Die Übungsprüfung hat keinen automatischen Test
+`src/pool.ts` sucht weiter mit Stichwörtern — es bedient nur noch die offene
+Programmliste, nicht mehr die Übungen.
 
-`server/src/exercise_spec.ts` prüft jede erzeugte Übung und löst bei Verstößen
-eine Korrekturrunde aus — sie entscheidet also mit, was in den Pool kommt. Für
-den Worker gibt es aber kein Testgerüst; geprüft wurde von Hand gegen einen
-echten Plan (0 Beanstandungen) und gegen ein absichtlich schlechtes Bundle (5
-richtige). Das gehört in einen Test, sobald der Worker eins bekommt.
+### 10b. ~~Die Übungsprüfung hat keinen automatischen Test~~ — erledigt
 
-Beim Bauen ist übrigens genau der Fehler passiert, vor dem die Prüfung schützen
-soll: die erste Fassung verglich `requirements` mit dem Text und meldete bei
-einem echten Plan 25 Beanstandungen, darunter "Tastatur" bei einer Tipp-Übung.
-Ein Prüfer mit überwiegend Fehlalarmen ist schlechter als keiner. Die Prüfung
-deckt jetzt nur noch Eindeutiges ab; Material bleibt reine Prompt-Regel.
+Der Worker hat jetzt eins: `npm test` in `server/` fährt 111 Tests, darunter
+jede Schemaprüfung gültig und kaputt, das Eindampfen, die Reihung, das Dedupe
+und ein Durchlauf über die ganze Pipeline mit konservierten KI-Antworten.
 
-### 11. Zwei Prompts, die auseinanderlaufen können — teilweise erledigt
+Was bewusst **nicht** dabei ist: `@cloudflare/vitest-pool-workers`. Vectorize
+und Workers AI haben keine lokalen Bindings, ein Lauf im echten Worker bräuchte
+also Netz und Zugangsdaten. D1, Vectorize und Workers AI sind stattdessen als
+Doppelgänger im Speicher nachgebaut (`test/speicher.ts`). Der Preis: was dort
+anders liegt als in der echten Datenbank, fällt hier nicht auf.
 
-`server/src/plan_prompt.ts` ist der verbindliche. `lib/data/ai_prompt.dart` ist
-die Fassung für Kopieren und Einfügen und kennt weder Werkzeuge noch Pool. Das
-ist so gewollt.
+Der Fehler von damals bleibt lehrreich: die erste Fassung der Prüfung verglich
+`requirements` mit dem Text und meldete bei einem echten Plan 25
+Beanstandungen, darunter „Tastatur" bei einer Tipp-Übung. Ein Prüfer mit
+überwiegend Fehlalarmen ist schlechter als keiner. Deshalb prüft `pruefen.ts`
+nur Eindeutiges — Struktur, Typen, Enums, Längen — und lässt alles Inhaltliche
+Prompt-Regel bleiben.
 
-`test/prompt_drift_test.dart` prüft inzwischen, dass die gemeinsamen Regeln in
-beiden stehen — wörtliche Bruchstücke, damit eine Umformulierung auffällt.
-Ungeprüft bleibt das Schema selbst: ändert sich das Datenmodell, muss es in
-beiden Fassungen nachgezogen werden.
+### 11. Zwei Wege, die auseinanderlaufen können — teilweise erledigt
 
-### 12. Was passiert, wenn die AI aufgibt
+Der Server hat seit Rev. 2 keinen einzelnen Prompt mehr, sondern drei
+(Diagnose, Architekt, Kurator). Dass sie wortgleich in
+`lernprogramm-generator-spec.md` stehen, prüft `server/test/spec-treue.test.ts`
+Zeile für Zeile — inklusive der einen gewollten Abweichung.
 
-`MAX_TURNS` steht auf 8. Wird es erreicht, fliegt ein `UpstreamError` und der
-Nutzer liest „Der Planer ist gerade nicht erreichbar" — was nicht stimmt. Der
-Fall ist unwahrscheinlich (gemessen: 6 Züge für einen gründlichen Lauf), aber
-die Meldung wäre irreführend.
+`lib/data/ai_prompt.dart` ist der kostenlose Weg: Prompt in einen Chat, JSON
+zurück in die App. Er kennt weder Bibliothek noch Rückkopplungsdiagnose und
+läuft damit **inhaltlich** neben dem Server her. `test/prompt_drift_test.dart`
+prüft nur noch, dass die alten Regeln darin stehen. Offen: ob dieser Weg
+überhaupt bleiben soll, jetzt wo Server und App verschiedene Modelle vom
+Lernen haben.
+
+### 12. Was passiert, wenn die AI aufgibt — erledigt
+
+Der Werkzeug-Agent mit `MAX_TURNS` ist weg. Jeder KI-Aufruf hat jetzt genau
+eine Aufgabe und ein festes Ausgabeformat; hält die Ausgabe der Prüfung nach
+zwei Nachbesserungen nicht stand, bricht der Lauf mit `unreadable` ab statt
+mit einer irreführenden Meldung über die Erreichbarkeit.
 
 ### 13. Veröffentlichen
 

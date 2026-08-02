@@ -37,21 +37,31 @@ domänenübergreifende Übungsdatenbank ist unendlich groß und daher nie fertig
 LevelUp dreht das um – **die AI erzeugt die Übungsobjekte beim Planbau mit, die
 Bibliothek ist Ergebnis statt Voraussetzung** (siehe `pool.md`).
 
-## Aktueller Stand (2026-08-01)
+## Aktueller Stand (2026-08-02)
+
+Das Backend ist gerade nach `lernprogramm-generator-spec.md` (Rev. 2) neu
+gebaut. Was davor stand — ein Werkzeug-Agent, der selbst entschied, wann er
+sucht und wann er schreibt — ist weg; siehe `backend.md`.
 
 | Komponente                                   | Stand                                  |
 |----------------------------------------------|----------------------------------------|
 | Datenmodell, Resolver, Persistenz            | fertig + getestet                      |
 | Alle Bildschirme inkl. Player                | fertig, nach Fitness-App-Vorbild umgebaut |
 | Import per Kopieren/Einfügen (kostenlos)     | fertig                                 |
-| Planbau über den eigenen Server (pro)        | live, mehrfach echt gelaufen           |
-| Recycling aus dem Pool (Werkzeug-Suche)      | live – gemessen 12 von 14 Bausteinen wiederverwendet |
+| Pipeline Diagnose → Architekt → Kurator      | gebaut, 111 Tests grün, **noch nie echt gelaufen** |
+| Vier Eingabefelder + Rückfragerunde in der App| gebaut, 119 Tests grün                |
 | Überarbeitung als Patch                      | live – gemessen 10 s gegen 3:46 für eine Neuerzeugung |
-| Offene Bibliothek über das Netz              | live, liest denselben Pool             |
-| Übungsprüfung + ein Reparaturzug             | live, aber ohne automatischen Test (`OFFEN.md` #10b) |
+| Offene Bibliothek über das Netz              | live, liest die Programmliste          |
+| Grundstock (12 Geige, 12 Krafttraining)      | geschrieben, **nicht eingespielt** – `OFFEN.md` #15 |
+| Vectorize-Indizes, `schema_v3.sql` entfernt  | **nicht angelegt** – `OFFEN.md` #15    |
+| Cloudflare-Plan (Free vs. Paid)              | **ungeklärt** – `OFFEN.md` #14         |
 | Missbrauchsschutz (Geräte-Registrierung)     | **fehlt** – `OFFEN.md` #1, das teuerste Loch |
 | Bezahlung, Konten                            | nicht angefangen                       |
 | Veröffentlichung in den Stores               | nicht angefangen                       |
+
+**Nichts davon ist gegen die echte API gelaufen.** Der Sandkasten dieses
+Umbaus hatte kein Netz zu Anthropic und keine Vectorize-Indizes; alle Zahlen
+oben sind Tests mit konservierten Antworten, keine Messungen.
 
 ## Handgeschriebene Inhalte gibt es nicht mehr
 
@@ -68,5 +78,5 @@ Für Tests wird bewusst weiterhin ein Beispiel-Bundle hereingereicht –
 ## Verwandt
 
 - Was als Nächstes fehlt: `OFFEN.md` in der Wurzel
-- Struktur der Objekte: `datenmodell.md`
-- Warum die Übung der wichtigste Baustein ist: `uebungen.md`
+- Wie der Plan entsteht: `backend.md`
+- Die verbindliche Fassung: `lernprogramm-generator-spec.md` in der Wurzel
