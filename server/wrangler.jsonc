@@ -3,7 +3,7 @@
   "name": "levelup-api",
   "main": "src/index.ts",
   // Auf einem neuen Projekt gehört hier das heutige Datum hin.
-  "compatibility_date": "2026-07-31",
+  "compatibility_date": "2026-08-02",
   "compatibility_flags": ["nodejs_compat"],
 
   "observability": {
@@ -20,9 +20,26 @@
     }
   ],
 
+  // Embeddings. Anthropic hat keine, und ein zweiter Anbieter wäre ein
+  // zweiter Schlüssel — Workers AI läuft im selben Aufruf mit.
+  "ai": { "binding": "AI" },
+
+  // Die Vektoren. Zwei Indizes, weil Bausteine und Tags nach
+  // Unterschiedlichem gefragt werden: "was passt zu diesem Zweck" gegen
+  // "welches Tag meint dasselbe wie dieses".
+  //
+  // Anlegen (einmalig, 1024 Dimensionen = Ausgabelänge von bge-m3):
+  //   npx wrangler vectorize create uebungen --dimensions=1024 --metric=cosine
+  //   npx wrangler vectorize create tagvokabular --dimensions=1024 --metric=cosine
+  //   npx wrangler vectorize create-metadata-index uebungen --property-name=status --type=string
+  "vectorize": [
+    { "binding": "VEC_UEBUNGEN", "index_name": "uebungen" },
+    { "binding": "VEC_TAGS", "index_name": "tagvokabular" }
+  ],
+
   // Nicht geheim, deshalb hier statt als Secret. Der Anthropic-Schlüssel
   // kommt über `wrangler secret put ANTHROPIC_API_KEY` und taucht nirgends
-  // im Repository auf.
+  // im Repository auf. Ebenso BETREIBER_TOKEN für Prüfliste und Kennzahlen.
   "vars": {
     // Freikontingent pro Gerät, solange es noch keine Bezahlung gibt.
     "FREE_GENERATIONS": "3",
@@ -32,6 +49,17 @@
     // Deckel für die Antwort. `max_tokens` begrenzt Denken UND Text zusammen.
     "MAX_OUTPUT_TOKENS": "32000",
     // Harte Tagesgrenze pro Gerät, unabhängig vom Guthaben.
-    "DAILY_LIMIT": "10"
+    "DAILY_LIMIT": "10",
+
+    // Ein Modell je Schritt, damit sich einzeln herunterstufen lässt, was
+    // sich als anspruchslos erweist. Der Kurator ist der Kandidat: er läuft
+    // pro Lauf am häufigsten. Erst messen, dann sparen.
+    "MODELL_DIAGNOSE": "claude-opus-5",
+    "MODELL_ARCHITEKT": "claude-opus-5",
+    "MODELL_KURATOR": "claude-opus-5",
+
+    // Mehrsprachig und mit 60k Token Kontext genügsam genug für ganze
+    // Anleitungen. Ausgabelänge 1024 — dieselbe Zahl steht bei den Indizes.
+    "MODELL_EMBEDDING": "@cf/baai/bge-m3"
   }
 }
