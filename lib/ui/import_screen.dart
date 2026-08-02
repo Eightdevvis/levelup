@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../data/ai_prompt.dart';
 import '../main.dart';
 import '../state/app_state.dart';
+import 'chat_import_screen.dart';
 import 'generate_screen.dart';
 import 'program_screen.dart';
 import 'theme.dart';
@@ -85,14 +86,41 @@ class _ImportScreenState extends State<ImportScreen> {
           ),
           const SizedBox(height: 18),
           ZBox(
-            title: 'plan erstellen (free)',
+            title: 'plan aus dem chat (free)',
+            filled: true,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _body(
                   p,
-                  'Befolge ein paar Schritte und importier damit einen guten '
-                  'Plan in deine Bibliothek.',
+                  'Besprich dein Vorhaben mit der KI deiner Wahl. Die App '
+                  'reicht dir zwei Texte zum Kopieren und baut aus den '
+                  'Antworten den Plan — sie kennt deine Bibliothek, die KI '
+                  'nicht. Kostet nichts außer ein paar Handgriffen.',
+                ),
+                const SizedBox(height: 14),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ChatImportScreen(),
+                    ),
+                  ),
+                  child: const Text('LOSLEGEN'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          ZBox(
+            title: 'fertiges bundle einfügen',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _body(
+                  p,
+                  'Der direkte Weg für ein Bundle, das schon im Format der '
+                  'App vorliegt — exportiert, geteilt oder in einem Rutsch '
+                  'erzeugt.',
                 ),
                 const SizedBox(height: 14),
                 OutlinedButton(

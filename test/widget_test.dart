@@ -130,7 +130,7 @@ void main() {
     expect(find.text('GEIGE'), findsWidgets);
   });
 
-  testWidgets('Importbildschirm bietet beide Wege an', (tester) async {
+  testWidgets('Importbildschirm bietet alle drei Wege an', (tester) async {
     await _pumpApp(tester);
 
     await tester.tap(find.byIcon(Icons.add));
@@ -142,7 +142,10 @@ void main() {
     );
 
     expect(kasten('PLAN ERSTELLEN (PRO)'), findsOneWidget);
-    expect(kasten('PLAN ERSTELLEN (FREE)'), findsOneWidget);
+    // Der kostenlose Weg über den eigenen Chat ist seit dem Umbau der
+    // eigentliche Hauptweg.
+    expect(kasten('PLAN AUS DEM CHAT (FREE)'), findsOneWidget);
+    expect(kasten('FERTIGES BUNDLE EINFÜGEN'), findsOneWidget);
   });
 
   testWidgets('die Schritte des freien Weges liegen eingeklappt', (

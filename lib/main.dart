@@ -25,9 +25,13 @@ class AppScope extends InheritedNotifier<AppState> {
 }
 
 class ProgramsApp extends StatefulWidget {
-  const ProgramsApp({super.key, required this.state});
+  const ProgramsApp({super.key, required this.state, this.home});
 
   final AppState state;
+
+  /// Nur für Tests: direkt auf einem bestimmten Bildschirm starten, statt
+  /// sich durch die Startseite zu tippen.
+  final Widget? home;
 
   @override
   State<ProgramsApp> createState() => _ProgramsAppState();
@@ -59,7 +63,7 @@ class _ProgramsAppState extends State<ProgramsApp> {
             if (snapshot.hasError) {
               return _StartupError(error: snapshot.error!);
             }
-            return const HomeScreen();
+            return widget.home ?? const HomeScreen();
           },
         ),
       ),
