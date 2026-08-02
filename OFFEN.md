@@ -49,20 +49,84 @@ entweder der Server wendet ihn zum Mitschreiben ebenfalls an, oder es reicht ein
 loserer Nachweis (dieses Gerät hatte in den letzten 24 Stunden einen
 erfolgreichen Lauf).
 
-### 14. Der Cloudflare-Plan ist ungeklärt
+### 14. Workers Free reicht für den Plan-Endpunkt nicht
 
-Ein Lauf mit fünfzehn Bedarfen macht deutlich mehr als 50 Unteranfragen — je
-Bedarf mindestens eine Vectorize-Abfrage, eine D1-Abfrage, ein KI-Aufruf und
-ein Embedding. Workers **Free** erlaubt 50 Unteranfragen und 10 ms CPU,
-Workers **Paid** 10.000 und bis zu 5 Minuten. Auf Free kann die Pipeline nicht
-in einer Anfrage laufen, gleich wie sie zugeschnitten ist.
+Gemessen an einem Lauf mit 3 Phasen × 6 Einheiten × 4 Übungen (72 Positionen,
+12 eindeutige Bedarfe, 4 wiederverwendet) — `server/test/aufwand.test.ts`:
 
-Gebaut ist alles unter der Annahme **Paid**. Welcher Plan tatsächlich gilt,
-ließ sich von hier aus nicht auslesen — das OAuth-Token von `wrangler` hat
-keine Abrechnungsrechte. Zu tun: nachsehen, und danach an einem echten Lauf
-Unteranfragen und CPU-Zeit messen (`wrangler tail`). Ergibt das mehr als der
-Plan hergibt, muss die Pipeline über mehrere Anfragen gestückelt werden, und
-das ändert den Zuschnitt der Endpunkte.
+| | |
+|---|---|
+| D1-Abfragen | 56 |
+| Anthropic-Aufrufe | 13 |
+| Workers AI | 17 |
+| Vectorize | 44 |
+| **eng gezählt** (nur D1 + fetch) | **69** |
+| **weit gezählt** (alle Bindings) | **130** |
+| Grenze Free | 50 |
+| Grenze Paid | 10.000 |
+
+Die Doku zählt „jede Anfrage über die Fetch-API oder an Cloudflare-Dienste
+wie R2, KV oder D1". Vectorize und Workers AI stehen nicht ausdrücklich dabei,
+das „wie" macht die Liste aber offen — die sichere Annahme ist die weite
+Zählung. **Beide Lesarten liegen über 50.**
+
+Dazu kommt die CPU-Grenze: Free erlaubt 10 ms je Aufruf. Allein das Lesen von
+dreizehn SSE-Strömen mit zusammen rund 16.000 Ausgabe-Token liegt darüber,
+noch vor dem Kosinus über die Bedarfsvektoren. **Free ist damit nicht knapp,
+sondern um mehr als eine Größenordnung daneben.**
+
+Was funktioniert: `POST /v1/laeufe` (Diagnose) ist ein Anthropic-Aufruf und
+vier D1-Abfragen. Nur der Plan-Endpunkt sprengt den Rahmen.
+
+Drei Wege:
+
+1. **Workers Paid, 5 $/Monat.** Dafür ist alles gebaut. Empfohlen.
+2. Die Pipeline über viele Anfragen stückeln und die App die Schleife treiben
+   lassen. Löst die Unteranfragen, **nicht** die 10 ms CPU, und macht die App
+   wieder zum Zustandshalter — genau das, was Rev. 2 abgeschafft hat.
+3. Kleinere Pläne. Verschiebt die Grenze, reißt sie aber weiter.
+
+---
+
+### 16. Was ein Plan kostet — und woran das hängt
+
+Gemessen am selben Lauf (`server/test/aufwand.test.ts`), Preise Opus 5
+(5 $/M Eingabe, 25 $/M Ausgabe):
+
+| Posten | Token | |
+|---|---|---|
+| Eingabe Diagnose | 481 | |
+| Eingabe Architekt | 939 | |
+| Eingabe Kurator (12 Aufrufe) | 31.246 | fast alles Kandidatenlisten |
+| Eingabe gesamt | 32.666 | 0,16 $ |
+| Ausgabe gesamt | 15.887 | 0,40 $ |
+| **Summe** | | **≈ 0,56 $ je Plan** |
+
+Die Texte sind gemessen, nur die Denk-Token sind geschätzt (1.200 Diagnose,
+2.500 Architekt, 700 je Kurator-Aufruf) — sie machen 12.100 der 15.887
+Ausgabe-Token aus und sind damit der größte Einzelposten. **Der Rechenweg ist
+also nur so gut wie diese Schätzung**; die echten Zahlen stehen nach dem
+ersten Lauf in `generations`.
+
+Grob: fester Anteil (Diagnose + Architekt) ≈ 0,15 $, dazu ≈ 0,036 $ je
+eindeutigem Bedarf.
+
+Drei Hebel, falls es zu teuer wird:
+
+- **Kurator auf Sonnet 5** statt Opus: ≈ 0,34 $ statt 0,56 $. Er wählt
+  überwiegend aus einer vorgelegten Liste aus — die Aufgabe, bei der der
+  Abstand zwischen den Modellen am kleinsten ist.
+- **Weniger Denken beim Kurator.** 8.400 der Ausgabe-Token sind seine
+  Gedankengänge, also gut 0,20 $ je Plan.
+- **Kürzere Kandidatenlisten.** Zehn volle Anleitungen sind 31.000 der 32.666
+  Eingabe-Token; bei fünf halbiert sich der Eingabeanteil. Kostet aber
+  Wiederverwendung, und die ist der Sinn der Sache.
+
+**Der eigentliche Kostenposten ist nicht der Plan, sondern Punkt 1.**
+`FREE_GENERATIONS` steht auf 3, macht ≈ 1,70 $ je Gerät — und Geräte kann sich
+jeder unbegrenzt anlegen.
+
+---
 
 ### 15. Der Grundstock ist noch nicht eingespielt
 

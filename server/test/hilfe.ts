@@ -86,7 +86,11 @@ export function testEnv(): Env {
   } as unknown as Env;
 }
 
-const DIM = 32;
+// Groß genug, dass sich die Einheitsvektoren nicht in die Quere kommen: bei 32
+// liefen Grundstock, Bedarfe und neue Bausteine über den Rand und zwei
+// verschiedene Texte bekamen denselben Vektor — was im Test wie eine echte
+// Dublette aussah.
+const DIM = 256;
 /** Die ersten Plätze bleiben für vorgegebene Vektoren frei, damit ein
  *  Einheitsvektor nicht zufällig neben einem davon liegt. */
 const ERSTER_FREIER_PLATZ = 8;

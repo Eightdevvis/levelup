@@ -39,8 +39,21 @@ export interface Pruefzeile {
   aehnlichkeit: number;
 }
 
+/** Wie viele Unteranfragen ein Lauf ausgelöst hat, aufgeschlüsselt.
+ *
+ *  Cloudflare zählt „jede Anfrage, die ein Worker über die Fetch-API oder an
+ *  Cloudflare-Dienste wie R2, KV oder D1 stellt". Vectorize und Workers AI
+ *  stehen nicht ausdrücklich in dieser Aufzählung — deshalb getrennt gezählt,
+ *  damit sich beide Lesarten rechnen lassen. */
+export interface Zaehler {
+  d1: number;
+  ai: number;
+  vectorize: number;
+}
+
 export interface Speicher {
   env: Env;
+  zaehler: Zaehler;
   uebungen: Map<string, UebungZeile>;
   tagvokabular: Map<string, { count: number; istTaetigkeit: boolean }>;
   pruefliste: Pruefzeile[];
@@ -72,15 +85,32 @@ export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher 
   const pruefliste: Pruefzeile[] = [];
   const vektoren = new Map<string, { werte: number[]; status: string }>();
   const tagVektoren = new Map<string, number[]>();
-  const ai = fakeAi(vorgaben);
+  const zaehler: Zaehler = { d1: 0, ai: 0, vectorize: 0 };
+  const roheAi = fakeAi(vorgaben);
+  const ai = {
+    run: async (modell: string, eingabe: { text: string | string[] }) => {
+      zaehler.ai++;
+      return (roheAi as unknown as { run: (m: string, e: unknown) => Promise<unknown> }).run(
+        modell,
+        eingabe,
+      );
+    },
+  } as unknown as Ai;
 
   const anweisung = (sql: string, args: unknown[]) => ({
-    all: async () => ({ results: lies(sql, args) }),
+    all: async () => {
+      zaehler.d1++;
+      return { results: lies(sql, args) };
+    },
     run: async () => {
+      zaehler.d1++;
       schreibe(sql, args);
       return { success: true };
     },
-    first: async () => lies(sql, args)[0] ?? null,
+    first: async () => {
+      zaehler.d1++;
+      return lies(sql, args)[0] ?? null;
+    },
   });
 
   const lies = (sql: string, args: unknown[]): Record<string, unknown>[] => {
@@ -169,6 +199,7 @@ export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher 
         frage: number[],
         optionen: { topK?: number; filter?: { status?: string } },
       ) => {
+        zaehler.vectorize++;
         const erlaubt = [...vektoren.entries()]
           .filter(([, v]) => optionen.filter?.status === undefined || v.status === optionen.filter.status)
           .map(([id, v]) => [id, v.werte] as [string, number[]]);
@@ -176,6 +207,7 @@ export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher 
         return { count: matches.length, matches };
       },
       upsert: async (eintraege: { id: string; values: number[]; metadata?: { status?: string } }[]) => {
+        zaehler.vectorize++;
         for (const e of eintraege) {
           vektoren.set(e.id, { werte: e.values, status: e.metadata?.status ?? 'aktiv' });
         }
@@ -184,10 +216,12 @@ export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher 
     },
     VEC_TAGS: {
       query: async (frage: number[], optionen: { topK?: number }) => {
+        zaehler.vectorize++;
         const matches = suche(tagVektoren.entries(), frage, optionen.topK ?? 5);
         return { count: matches.length, matches };
       },
       upsert: async (eintraege: { id: string; values: number[] }[]) => {
+        zaehler.vectorize++;
         for (const e of eintraege) tagVektoren.set(e.id, e.values);
         return { mutationId: 'test' };
       },
@@ -222,5 +256,5 @@ export function fakeSpeicher(vorgaben: Record<string, number[]> = {}): Speicher 
     }
   };
 
-  return { env, uebungen, tagvokabular, pruefliste, vektoren, tagVektoren, lege };
+  return { env, zaehler, uebungen, tagvokabular, pruefliste, vektoren, tagVektoren, lege };
 }
