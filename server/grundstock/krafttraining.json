@@ -1,0 +1,102 @@
+{
+  "taetigkeit": "krafttraining",
+  "hinweis": "Zweite Tätigkeit des Kaltstarts (§10). Schwerpunkt Rückkopplung — bei Kraft heißt das: Video, Referenz, Messwert oder ein fremdes Auge statt Körpergefühl. Kein Baustein enthält etwas, das nur für einen Nutzer gilt (§11).",
+  "bausteine": [
+    {
+      "id": "g-kraft-01",
+      "titel": "Einen Satz von der Seite filmen",
+      "anleitung": "Stell das Handy auf Hüfthöhe seitlich neben dich und filme einen vollständigen Satz. Sieh das Video einmal an, ohne es zu bewerten, und notiere die Wiederholung, bei der sich die Bewegung zuerst verändert.",
+      "benefit": "Du siehst, was dein Körpergefühl während des Satzes verschweigt",
+      "tags": ["krafttraining", "rueckkopplung", "video", "technik", "selbstwahrnehmung"],
+      "equipment": ["handy"]
+    },
+    {
+      "id": "g-kraft-02",
+      "titel": "Eigenes Video gegen ein Referenzvideo stellen",
+      "anleitung": "Spiel dein Video und eine saubere Ausführung derselben Übung direkt hintereinander ab, am besten im gleichen Bildausschnitt. Benenne den Unterschied in einem Satz.",
+      "benefit": "Du erkennst nicht nur, dass etwas anders aussieht, sondern was",
+      "tags": ["krafttraining", "rueckkopplung", "vorlage", "video", "technik"],
+      "equipment": ["handy"]
+    },
+    {
+      "id": "g-kraft-03",
+      "titel": "Leere Stange, Position halten",
+      "anleitung": "Geh mit der leeren Stange in die tiefste Position der Übung und halte sie zwanzig Sekunden. Filme dabei. Prüfe im Video, ob Rücken, Knie und Fußstellung dort sind, wo du sie vermutet hast.",
+      "benefit": "Die Endposition wird überprüfbar, bevor Gewicht sie versteckt",
+      "tags": ["krafttraining", "rueckkopplung", "video", "technik", "mobilitaet"],
+      "equipment": ["langhantel", "handy"]
+    },
+    {
+      "id": "g-kraft-04",
+      "titel": "Tempo vorgeben und mitzählen",
+      "anleitung": "Senke das Gewicht über drei gezählte Sekunden, halte eine, und drücke wieder hoch. Zähle laut oder stumm mit. Bricht das Zählen ein, ist der Satz zu Ende.",
+      "benefit": "Der Zählrhythmus verrät den Punkt, an dem die Technik nachlässt",
+      "tags": ["krafttraining", "tempo", "technik", "satzsteuerung"],
+      "equipment": []
+    },
+    {
+      "id": "g-kraft-05",
+      "titel": "Wiederholungen schätzen, dann ausführen",
+      "anleitung": "Sag vor dem Satz an, wie viele saubere Wiederholungen du schaffst. Führe ihn aus und vergleiche. Weicht die Zahl mehr als zwei ab, war die Last falsch gewählt.",
+      "benefit": "Deine Einschätzung bekommt eine Antwort statt nur ein Gefühl",
+      "tags": ["krafttraining", "rueckkopplung", "belastungssteuerung", "selbstwahrnehmung"],
+      "equipment": []
+    },
+    {
+      "id": "g-kraft-06",
+      "titel": "Griff- und Standbreite markieren",
+      "anleitung": "Markiere Hand- und Fußposition, bevor der erste Satz beginnt — an der Rändelung der Stange, mit Klebeband am Boden. Prüfe vor jedem Satz, ob du noch dort stehst.",
+      "benefit": "Zwei Sätze werden vergleichbar, weil sich nur die Last ändert",
+      "tags": ["krafttraining", "technik", "wiederholbarkeit", "aufbau"],
+      "equipment": ["langhantel"]
+    },
+    {
+      "id": "g-kraft-07",
+      "titel": "Kniebeuge auf die Box",
+      "anleitung": "Stell eine Box oder Bank so hoch, dass du sie in der gewünschten Tiefe berührst. Setz bei jeder Wiederholung kurz auf, ohne dich fallen zu lassen, und steh wieder auf.",
+      "benefit": "Die Tiefe ist nicht mehr Ansichtssache, sondern spürbar gleich",
+      "tags": ["krafttraining", "rueckkopplung", "kniebeuge", "technik", "beine"],
+      "equipment": ["box"]
+    },
+    {
+      "id": "g-kraft-08",
+      "titel": "Pause in der schwersten Position",
+      "anleitung": "Halte zwei Sekunden in der Position, in der die Übung am schwersten ist, bevor du wieder hochdrückst. Kein Schwung, kein Federn.",
+      "benefit": "Schwung kann die Lücke nicht mehr überdecken, in der die Kraft fehlt",
+      "tags": ["krafttraining", "technik", "kraftaufbau", "schwachstelle"],
+      "equipment": []
+    },
+    {
+      "id": "g-kraft-09",
+      "titel": "Trainingslog gegen die Vorwoche",
+      "anleitung": "Schreib Gewicht, Wiederholungen und Sätze direkt nach jedem Satz auf. Sieh vor dem nächsten Training nach, was letzte Woche stand, und entscheide daran die Last.",
+      "benefit": "Die Steigerung folgt Zahlen statt Tagesform",
+      "tags": ["krafttraining", "rueckkopplung", "protokoll", "fortschritt", "belastungssteuerung"],
+      "equipment": ["notizbuch"]
+    },
+    {
+      "id": "g-kraft-10",
+      "titel": "Aufwärmsatz als Technikprobe",
+      "anleitung": "Führe den letzten Aufwärmsatz bewusst als Prüfung aus: ein Merkmal, auf das du achtest, und ein kurzes Video davon. Stimmt das Merkmal nicht, bleibt das Gewicht heute, wo es ist.",
+      "benefit": "Die Technik entscheidet über die Last, nicht der Plan",
+      "tags": ["krafttraining", "rueckkopplung", "aufwaermen", "technik", "video"],
+      "equipment": ["handy"]
+    },
+    {
+      "id": "g-kraft-11",
+      "titel": "Ohne Spiegel arbeiten, mit Aufnahme prüfen",
+      "anleitung": "Führe den Satz ohne in den Spiegel zu sehen aus und filme ihn. Vergleiche danach, was du gespürt hast, mit dem, was zu sehen ist.",
+      "benefit": "Das Körpergefühl wird geeicht, statt vom Spiegel ersetzt",
+      "tags": ["krafttraining", "rueckkopplung", "video", "selbstwahrnehmung", "technik"],
+      "equipment": ["handy"]
+    },
+    {
+      "id": "g-kraft-12",
+      "titel": "Ein Merkmal von jemandem prüfen lassen",
+      "anleitung": "Bitte jemanden, während eines Satzes auf genau ein Merkmal zu achten — etwa ob die Knie nach innen wandern. Keine allgemeine Beurteilung, nur dieses eine.",
+      "benefit": "Ein fremdes Auge sieht, was du im Satz nicht sehen kannst",
+      "tags": ["krafttraining", "rueckkopplung", "fremde_rueckmeldung", "technik"],
+      "equipment": []
+    }
+  ]
+}

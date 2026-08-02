@@ -454,6 +454,16 @@ function pruefeNeueUebung(roh: unknown, pfad: string, s: Sammler): NeueUebung {
 }
 
 /**
+ * Ein einzelner Baustein für sich — für den Grundstock, der von Hand
+ * geschrieben ist und trotzdem durch dieselbe Prüfung muss wie alles, was die
+ * KI liefert. Ein Tippfehler im Kaltstart wäre der Maßstab für alles Spätere.
+ */
+export function pruefeBaustein(roh: unknown): Ergebnis<NeueUebung> {
+  const s = new Sammler();
+  return ergebnis(pruefeNeueUebung(roh, 'baustein', s), s);
+}
+
+/**
  * `kandidatenIds` ist der Halluzinationsschutz: Bei `reuse` muss die ID aus
  * der Liste stammen, die dem Modell im selben Aufruf vorgelegt wurde. Eine
  * erfundene ID würde sonst zu einer Übungsreferenz ins Leere — in der App

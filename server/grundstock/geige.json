@@ -1,0 +1,102 @@
+{
+  "taetigkeit": "geige",
+  "hinweis": "Die ersten fünf stehen wortgleich in der Spec (§10). Schwerpunkt Rückkopplung: wahrnehmen, abgleichen, korrigieren, wieder von vorn. Kein Baustein enthält etwas, das nur für einen Nutzer gilt (§11).",
+  "bausteine": [
+    {
+      "id": "g-geige-01",
+      "titel": "Acht Takte aufnehmen und anhören",
+      "anleitung": "Nimm die schwierigste Stelle deines aktuellen Stücks auf. Hör die Aufnahme einmal ganz durch, ohne Instrument in der Hand. Notiere die Stelle, die dich als Erstes stört.",
+      "benefit": "Du bemerkst Fehler, die du im Spielen nicht hörst",
+      "tags": ["geige", "rueckkopplung", "aufnahme", "selbstwahrnehmung"],
+      "equipment": ["geige", "aufnahmegeraet"]
+    },
+    {
+      "id": "g-geige-02",
+      "titel": "Aufnahme gegen Original stellen",
+      "anleitung": "Spiele deine Aufnahme und eine Originalaufnahme derselben Stelle direkt hintereinander ab. Benenne den Unterschied in einem Satz.",
+      "benefit": "Du erkennst nicht nur, dass etwas abweicht, sondern wo",
+      "tags": ["geige", "rueckkopplung", "vorlage", "aufnahme", "gehoer"],
+      "equipment": ["geige", "aufnahmegeraet"]
+    },
+    {
+      "id": "g-geige-03",
+      "titel": "Vier Takte singen, bevor du sie spielst",
+      "anleitung": "Sing die nächsten vier Takte, ohne Instrument. Erst wenn du sie singen kannst, nimmst du die Geige.",
+      "benefit": "Du weißt vor dem ersten Versuch, was herauskommen soll",
+      "tags": ["geige", "gehoer", "vorstellung", "intonation"],
+      "equipment": []
+    },
+    {
+      "id": "g-geige-04",
+      "titel": "Note singen, dann anspielen",
+      "anleitung": "Sing die Note, die du liest. Spiel sie danach an. Stimmte sie, weiter; stimmte sie nicht, dieselbe Zeile noch einmal.",
+      "benefit": "Falsches setzt sich nicht fest, weil du es sofort bemerkst",
+      "tags": ["geige", "rueckkopplung", "intonation", "gehoer", "notenlesen"],
+      "equipment": ["geige", "noten"]
+    },
+    {
+      "id": "g-geige-05",
+      "titel": "Auf zwei Takte verkleinern",
+      "anleitung": "Nimm zwei Takte statt acht. Wiederhole, bis dieselbe Stelle dreimal hintereinander gleich klingt.",
+      "benefit": "Du siehst, woran es liegt, statt nur dass es nicht klappt",
+      "tags": ["geige", "uebemethode", "wiederholung", "fehleranalyse"],
+      "equipment": ["geige"]
+    },
+    {
+      "id": "g-geige-06",
+      "titel": "Leersaiten gegen das Stimmgerät prüfen",
+      "anleitung": "Stimme jede Saite nach Gehör, ohne hinzusehen. Prüfe erst danach mit dem Stimmgerät und merk dir, in welche Richtung du danebenlagst.",
+      "benefit": "Dein Gehör bekommt eine Antwort statt nur eine Vermutung",
+      "tags": ["geige", "rueckkopplung", "stimmen", "intonation", "gehoer"],
+      "equipment": ["geige", "stimmgeraet"]
+    },
+    {
+      "id": "g-geige-07",
+      "titel": "Tonleiter über einem Bordunton",
+      "anleitung": "Lass den Grundton als Bordun laufen — Leersaite oder Aufnahme. Spiel die Tonleiter langsam darüber. Halte jeden Ton, bis du hörst, ob er mit dem Bordun schwebt oder ruhig steht.",
+      "benefit": "Jeder Ton wird gegen einen festen Bezug hörbar, nicht gegen dein Gedächtnis",
+      "tags": ["geige", "rueckkopplung", "intonation", "tonleiter", "gehoer"],
+      "equipment": ["geige"]
+    },
+    {
+      "id": "g-geige-08",
+      "titel": "Bogenstrich im Spiegel führen",
+      "anleitung": "Stell dich seitlich vor den Spiegel und spiele lange Striche auf einer Leersaite. Beobachte nur eine Sache: bleibt der Bogen parallel zum Steg. Sobald er wandert, hältst du an und setzt neu an.",
+      "benefit": "Du siehst die Abweichung, statt sie erst am Ton zu merken",
+      "tags": ["geige", "rueckkopplung", "bogen", "bogenfuehrung", "haltung"],
+      "equipment": ["geige", "spiegel"]
+    },
+    {
+      "id": "g-geige-09",
+      "titel": "Halbe Geschwindigkeit, volle Aufmerksamkeit",
+      "anleitung": "Spiel die Stelle halb so schnell wie vorgesehen. Ziehe das Tempo erst an, wenn drei Durchgänge hintereinander fehlerfrei waren. Beim ersten Fehler gehst du wieder auf das vorige Tempo zurück.",
+      "benefit": "Das Tempo folgt dem Können, nicht der Ungeduld",
+      "tags": ["geige", "uebemethode", "tempo", "wiederholung"],
+      "equipment": ["geige", "metronom"]
+    },
+    {
+      "id": "g-geige-10",
+      "titel": "Doppelgriff gegen die Leersaite prüfen",
+      "anleitung": "Spiel den gegriffenen Ton zusammen mit der benachbarten Leersaite. Hör auf das Schweben zwischen beiden. Verschiebe den Finger in Millimeterschritten, bis das Schweben aufhört.",
+      "benefit": "Die Leersaite sagt dir, was richtig ist — dein Finger muss es nur suchen",
+      "tags": ["geige", "rueckkopplung", "intonation", "doppelgriff", "gehoer"],
+      "equipment": ["geige"]
+    },
+    {
+      "id": "g-geige-11",
+      "titel": "Aufnahme der Vorwoche noch einmal hören",
+      "anleitung": "Hör die Aufnahme derselben Stelle von vor einer Woche und die von heute nacheinander. Schreib einen Satz dazu, was sich geändert hat, und einen dazu, was gleich geblieben ist.",
+      "benefit": "Fortschritt wird sichtbar, und Stillstand auch",
+      "tags": ["geige", "rueckkopplung", "aufnahme", "fortschritt"],
+      "equipment": ["geige", "aufnahmegeraet"]
+    },
+    {
+      "id": "g-geige-12",
+      "titel": "Eine Stelle jemandem vorspielen",
+      "anleitung": "Spiel die geübte Stelle einer anderen Person vor. Bitte um genau eine Rückmeldung: was ist die auffälligste Abweichung. Keine allgemeine Bewertung.",
+      "benefit": "Ein fremdes Ohr hört, woran deines sich gewöhnt hat",
+      "tags": ["geige", "rueckkopplung", "fremde_rueckmeldung", "vorspiel"],
+      "equipment": ["geige"]
+    }
+  ]
+}
