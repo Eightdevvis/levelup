@@ -1,6 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+
+import 'local_image_io.dart'
+    if (dart.library.js_interop) 'local_image_web.dart';
 
 import '../model/exercise.dart';
 import 'theme.dart';
@@ -168,11 +169,9 @@ class _MediaBox extends StatelessWidget {
       );
     } else if (uri.startsWith('file:') || uri.startsWith('/')) {
       final path = uri.startsWith('file:') ? Uri.parse(uri).toFilePath() : uri;
-      content = Image.file(
-        File(path),
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => _placeholder(scheme, uri),
-      );
+      content =
+          localImage(path, () => _placeholder(scheme, uri)) ??
+          _placeholder(scheme, uri);
     } else {
       content = _placeholder(scheme, uri);
     }

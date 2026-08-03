@@ -1,50 +1,24 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
+import 'storage_io.dart' if (dart.library.js_interop) 'storage_web.dart';
 
 import '../model/library.dart';
 import '../model/session.dart';
 
-/// Rohes Lesen/Schreiben — abstrahiert, damit Tests ohne Dateisystem laufen.
+/// Rohes Lesen/Schreiben — abstrahiert, damit Tests ohne Dateisystem laufen
+/// und damit das Web nicht an `dart:io` scheitert.
 abstract class StorageBackend {
   Future<String?> read();
   Future<void> write(String contents);
 }
 
-class FileStorageBackend implements StorageBackend {
-  FileStorageBackend({this.fileName = 'programs_store.json'});
-
-  final String fileName;
-  File? _cached;
-
-  Future<File> _file() async {
-    final cached = _cached;
-    if (cached != null) return cached;
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/$fileName');
-    _cached = file;
-    return file;
-  }
-
-  @override
-  Future<String?> read() async {
-    final file = await _file();
-    if (!await file.exists()) return null;
-    return file.readAsString();
-  }
-
-  @override
-  Future<void> write(String contents) async {
-    final file = await _file();
-    await file.parent.create(recursive: true);
-    // Erst daneben schreiben, dann umbenennen: ein Absturz mitten im Schreiben
-    // darf nicht die gesamte Bibliothek zerlegen.
-    final temp = File('${file.path}.tmp');
-    await temp.writeAsString(contents, flush: true);
-    await temp.rename(file.path);
-  }
-}
+/// Der Speicher der jeweiligen Plattform: eine Datei auf dem Gerät, der
+/// Browserspeicher im Web.
+///
+/// Über einen bedingten Import, nicht über eine Abfrage zur Laufzeit: `dart:io`
+/// lässt sich im Web nicht einmal übersetzen, eine Verzweigung im Code käme
+/// also zu spät.
+StorageBackend defaultBackend() => plattformBackend();
 
 class MemoryStorageBackend implements StorageBackend {
   MemoryStorageBackend([this._contents]);

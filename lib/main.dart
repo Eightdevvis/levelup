@@ -7,7 +7,7 @@ import 'ui/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final state = AppState(Store(FileStorageBackend()));
+  final state = AppState(Store(defaultBackend()));
   runApp(ProgramsApp(state: state));
 }
 
