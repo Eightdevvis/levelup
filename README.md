@@ -31,8 +31,8 @@ Vier Ebenen, alle in `lib/model/`:
 
 ```
 Exercise    das wiederverwendbare Übungsobjekt
-            Name, Anleitung, Vorteile, Merksätze, Medien, Voraussetzungen
-            `domain` ist ein freies Tag, kein Enum
+            name, description, benefits, cues, media, equipment, tags
+            Die Tätigkeit ist kein eigenes Feld — sie steht als erster Tag
 
 Routine     die "Liste" — geordnete Folge von ExerciseSlots
             Slot = Übung + Sätze + Pause + Progression
@@ -71,31 +71,46 @@ ist die Last numerisch mit Einheit statt Freitext — sonst wäre
 
 ## AI-Anbindung
 
-Der Weg funktioniert heute ohne API-Key und ohne Kosten:
+Der Hauptweg funktioniert ohne API-Key und ohne Kosten — **Plan aus dem
+Chat**, in zwei Runden:
 
-1. Im Import-Screen **Prompt kopieren** — enthält das vollständige Schema und
-   die Anweisung, zuerst das eigentliche Problem zu diagnostizieren.
-2. In Claude einfügen, dahinter das eigene Anliegen beschreiben.
-3. Antwort-JSON zurück in die App einfügen. Code-Zäune werden entfernt.
+1. Das Vorhaben mit einer AI der Wahl besprechen.
+2. Ersten Text kopieren: die AI stellt jede Übung als **Tag-Menge** dar.
+   Wofür sie keinen Tag findet, schreibt sie selbst aus. Die App löst die
+   Tag-Mengen gegen die eigene Bibliothek auf — eine Übung wird über ihre
+   Tags erkannt, nicht über ihren Namen.
+3. Zweiten Text kopieren: die AI ordnet die nun feststehenden Übungen zu
+   Einheiten, Tagen und Phasen. Sie sieht dabei nur Kennungen, damit die
+   Übungstexte nicht ein zweites Mal durch den Chat reisen.
+
+Daneben bleibt der direkte Weg für ein fertiges Bundle: ein Prompt, ein JSON,
+einfügen. Code-Zäune werden entfernt.
 
 Ein Bundle transportiert Übungen, Listen und Programm zusammen, damit ein
 generierter Plan seine Übungen mitbringt. Gleiche IDs werden ersetzt statt
 gedoppelt — ein erneuter Import aktualisiert. Fehlende Verweise brechen den
 Import nicht ab, sondern werden benannt und im Programm angezeigt.
 
-Der Prompt liegt in `lib/data/ai_prompt.dart`. Ein späterer direkter API-Aufruf
-kann dieselbe Vorlage benutzen.
+Die Texte der zwei Runden werden in `lib/data/chat_prompts.dart` gebaut — sie
+tragen den Tag-Pool bzw. die aufgelösten Übungen und sind deshalb nicht fest.
+Der Prompt des direkten Weges liegt in `lib/data/ai_prompt.dart`.
 
-## Enthaltene Beispielprogramme
+Ein dritter Weg über einen eigenen Server (`server/`) ist gebaut, aber noch
+nie gelaufen — siehe `OFFEN.md` #14.
 
-Vier Domänen, um zu zeigen, dass die Struktur trägt:
+## Enthaltene Inhalte
 
-- **Bach lesen lernen** (Geige, 12 Wochen) — der Fall, an dem das Modell
-  entworfen wurde. Diagnose: das Problem ist nicht zu wenig Bach, sondern das
-  Notationsverständnis. Die ersten vier Wochen enthalten deshalb keinen Bach.
-- **Gehörtraining Grundstock** (8 Wochen) — Quotenziele mit langsam steigender Hürde.
-- **Kraft Grundprogramm** (8 Wochen) — A/B-Rotation, Gewichtssteigerung, Deload-Phase.
-- **Zeichnen Grundlagen** (6 Wochen) — offene Aufgaben ohne Zielwert.
+Keine. Wer die App installiert, findet eine leere Bibliothek und holt sich
+seinen eigenen Plan — die vier früheren Beispielprogramme sind gelöscht,
+nachdem eines beim echten Anschauen nicht taugte.
+
+Zum Prüfen gibt es ein **Testprogramm** (`lib/data/demo_bundle.dart`), das
+jede Funktion einmal zeigt: alle vier Zieltypen, Last, mehrere Sätze,
+Steigerung, beide Tagespläne, Medien. Es wird über das Menü der
+Übungsbibliothek geladen, nicht beim Start — und bleibt aus dem Tag-Pool des
+Chat-Imports draußen.
+
+Für Tests reicht `test/support/seed.dart` weiterhin Beispiele herein.
 
 ## Aufbau
 
@@ -135,5 +150,6 @@ Fertig und getestet: Datenmodell, Resolver, Persistenz, Import/Export,
 alle Screens inklusive Player mit allen vier Übungstypen.
 
 Noch offen: Medien werden nur als lokale Datei oder Asset angezeigt (Remote-URLs
-erscheinen als Verweis), es gibt keinen In-App-Editor für Programme, und die
-AI-Anbindung läuft über Kopieren/Einfügen statt über einen direkten API-Aufruf.
+erscheinen als Verweis), es gibt keinen In-App-Editor für Programme, und der
+eigene Server ist gebaut, aber nie gelaufen. Was sonst fehlt, steht in
+`OFFEN.md`.
