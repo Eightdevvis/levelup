@@ -37,11 +37,69 @@ class Library {
 
   /// Legt ein Bundle über die Bibliothek. Gleiche IDs werden überschrieben —
   /// ein erneuter Import derselben Quelle aktualisiert also, statt zu doppeln.
-  Library merge(Bundle bundle) => Library(
-    exercises: {...exercises, for (final e in bundle.exercises) e.id: e},
-    routines: {...routines, for (final r in bundle.routines) r.id: r},
-    programs: {...programs, for (final p in bundle.programs) p.id: p},
-  );
+  ///
+  /// Bei Einheiten gilt das nur innerhalb desselben Programms: eine Einheit
+  /// gehört zu genau einem Plan, und zwei Pläne, die zufällig dieselbe Kennung
+  /// vergeben, dürfen sich nicht gegenseitig auslöschen. Siehe [_entwirrt].
+  Library merge(Bundle bundle) {
+    final sauber = _entwirrt(bundle);
+    return Library(
+      exercises: {...exercises, for (final e in sauber.exercises) e.id: e},
+      routines: {...routines, for (final r in sauber.routines) r.id: r},
+      programs: {...programs, for (final p in sauber.programs) p.id: p},
+    );
+  }
+
+  /// Benennt hereinkommende Einheiten um, die fremde überschreiben würden.
+  ///
+  /// Eine KI nennt ihre Einheiten „e1", „e2", „woche1" — Kennungen, die nichts
+  /// über den Plan sagen, zu dem sie gehören. Die Bibliothek führt Einheiten
+  /// aber in einer einzigen Ablage. Ohne diese Prüfung überschriebe der zweite
+  /// importierte Plan die Einheiten des ersten, und das ältere Programm zeigte
+  /// beim Öffnen den Inhalt des neueren.
+  ///
+  /// Umbenannt wird die hereinkommende Seite, nie die vorhandene: was schon in
+  /// der Bibliothek liegt und benutzt wird, bleibt unangetastet. Gehört die
+  /// bestehende Einheit zu einem Programm, das dieses Bundle ohnehin ersetzt,
+  /// ist es keine Kollision, sondern eine Aktualisierung.
+  Bundle _entwirrt(Bundle bundle) {
+    if (bundle.routines.isEmpty) return bundle;
+
+    final ersetzte = bundle.programs.map((p) => p.id).toSet();
+    final fremd = <String>{
+      for (final program in programs.values)
+        if (!ersetzte.contains(program.id)) ...program.routineIds,
+    };
+
+    final namen = <String, String>{};
+    for (final routine in bundle.routines) {
+      if (!fremd.contains(routine.id)) continue;
+      final besitzer = bundle.programs
+          .where((p) => p.routineIds.contains(routine.id))
+          .map((p) => p.id)
+          .firstOrNull;
+      namen[routine.id] = '${besitzer ?? 'import'}-${routine.id}';
+    }
+    if (namen.isEmpty) return bundle;
+
+    return Bundle(
+      version: bundle.version,
+      personalNote: bundle.personalNote,
+      exercises: bundle.exercises,
+      routines: [
+        for (final r in bundle.routines)
+          namen.containsKey(r.id)
+              ? Routine(
+                  id: namen[r.id]!,
+                  name: r.name,
+                  description: r.description,
+                  slots: r.slots,
+                )
+              : r,
+      ],
+      programs: [for (final p in bundle.programs) p.renamed(namen)],
+    );
+  }
 
   Library withoutProgram(String id) => Library(
     exercises: exercises,

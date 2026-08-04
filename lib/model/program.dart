@@ -131,6 +131,10 @@ sealed class Schedule {
   /// Alle Listen, die dieser Plan überhaupt anfasst.
   Set<String> get routineIds;
 
+  /// Derselbe Plan, aber mit umbenannten Listen. Wird beim Import gebraucht,
+  /// wenn eine hereinkommende Liste eine fremde überschreiben würde.
+  Schedule renamed(Map<String, String> namen);
+
   static Schedule fromJson(Map<String, dynamic> json) {
     final kind = json['kind'] as String?;
     return switch (kind) {
@@ -168,6 +172,12 @@ class EveryDaySchedule extends Schedule {
   Set<String> get routineIds => {routineId};
 
   @override
+  Schedule renamed(Map<String, String> namen) => EveryDaySchedule(
+    routineId: namen[routineId] ?? routineId,
+    daysPerWeek: daysPerWeek,
+  );
+
+  @override
   Map<String, dynamic> toJson() => {
     'kind': kind,
     'routineId': routineId,
@@ -198,6 +208,16 @@ class CycleSchedule extends Schedule {
   @override
   Set<String> get routineIds =>
       days.map((d) => d.routineId).whereType<String>().toSet();
+
+  @override
+  Schedule renamed(Map<String, String> namen) => CycleSchedule(
+    days: [
+      for (final tag in days)
+        tag.routineId == null || !namen.containsKey(tag.routineId)
+            ? tag
+            : DaySlot(routineId: namen[tag.routineId], label: tag.label),
+    ],
+  );
 
   @override
   Map<String, dynamic> toJson() => {
@@ -231,6 +251,15 @@ class Phase {
   final String? goal;
 
   int get totalDays => weeks * schedule.cycleLength;
+
+  Phase renamed(Map<String, String> namen) => Phase(
+    id: id,
+    name: name,
+    weeks: weeks,
+    schedule: schedule.renamed(namen),
+    description: description,
+    goal: goal,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -288,6 +317,16 @@ class Program {
 
   Set<String> get routineIds =>
       phases.expand((p) => p.schedule.routineIds).toSet();
+
+  Program renamed(Map<String, String> namen) => Program(
+    id: id,
+    name: name,
+    description: description,
+    author: author,
+    tags: tags,
+    phases: [for (final phase in phases) phase.renamed(namen)],
+    rationale: rationale,
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,

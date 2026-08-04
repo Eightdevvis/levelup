@@ -57,15 +57,36 @@ PlanParseResult parseRoundTwo(String raw, List<Resolved> exercises) {
   final warnings = <String>[];
   final byId = {for (final r in exercises) r.exercise.id: r.exercise};
 
+  // --- Kennung des Programms ------------------------------------------------
+  // Steht vor allem anderen, weil jede Einheit sie im Namen trägt.
+  final programTags = [
+    for (final t in _list(programJson['tags']))
+      if (_text(t) != null) normalizeTag(_text(t)!),
+  ].where((t) => t.isNotEmpty).toList();
+
+  final programId = slugFor(
+    programTags.isEmpty ? '' : programTags.first,
+    _text(programJson['name']) ?? 'programm',
+  );
+
   // --- Einheiten ------------------------------------------------------------
+  // Schlüssel ist die endgültige Kennung, `nachRoh` übersetzt die der KI.
   final routines = <String, Routine>{};
+  final nachRoh = <String, String>{};
   for (final roh in _list(root['units'])) {
     if (roh is! Map<String, dynamic>) continue;
-    final id = _text(roh['id']);
-    if (id == null) {
+    final rohId = _text(roh['id']);
+    if (rohId == null) {
       warnings.add('Eine Einheit ohne "id" wurde übergangen.');
       continue;
     }
+    // Jede KI nennt ihre Einheiten „e1", „e2", „e3" — die Kennung sagt nichts
+    // über den Plan, zu dem sie gehört. Ungeändert übernommen überschriebe der
+    // nächste Import die Einheiten aller vorigen Programme, und ein altes
+    // Programm zeigte plötzlich den Inhalt des neuesten. Die Bibliothek führt
+    // Einheiten in einer einzigen Ablage; eindeutig muss die Kennung hier
+    // werden, nicht dort.
+    final id = '$programId-$rohId';
 
     final slots = <ExerciseSlot>[];
     for (final rohSlot in _list(roh['exercises'])) {
@@ -73,7 +94,7 @@ PlanParseResult parseRoundTwo(String raw, List<Resolved> exercises) {
       final exerciseId = _text(rohSlot['id']);
       if (exerciseId == null || !byId.containsKey(exerciseId)) {
         warnings.add(
-          'Einheit "$id" verweist auf die unbekannte Übung '
+          'Einheit "$rohId" verweist auf die unbekannte Übung '
           '"${exerciseId ?? '?'}" — übergangen.',
         );
         continue;
@@ -88,15 +109,16 @@ PlanParseResult parseRoundTwo(String raw, List<Resolved> exercises) {
     }
 
     if (slots.isEmpty) {
-      warnings.add('Einheit "$id" hat keine gültige Übung — übergangen.');
+      warnings.add('Einheit "$rohId" hat keine gültige Übung — übergangen.');
       continue;
     }
     routines[id] = Routine(
       id: id,
-      name: _text(roh['name']) ?? 'Einheit $id',
+      name: _text(roh['name']) ?? 'Einheit $rohId',
       description: _text(roh['description']),
       slots: slots,
     );
+    nachRoh[rohId] = id;
   }
 
   if (routines.isEmpty) {
@@ -107,16 +129,6 @@ PlanParseResult parseRoundTwo(String raw, List<Resolved> exercises) {
   }
 
   // --- Phasen ---------------------------------------------------------------
-  final programTags = [
-    for (final t in _list(programJson['tags']))
-      if (_text(t) != null) normalizeTag(_text(t)!),
-  ].where((t) => t.isNotEmpty).toList();
-
-  final programId = slugFor(
-    programTags.isEmpty ? '' : programTags.first,
-    _text(programJson['name']) ?? 'programm',
-  );
-
   final phases = <Phase>[];
   final phasenJson = _list(programJson['phases']);
   for (var i = 0; i < phasenJson.length; i++) {
@@ -127,8 +139,10 @@ PlanParseResult parseRoundTwo(String raw, List<Resolved> exercises) {
     for (final tag in _list(roh['days'])) {
       final name = _text(tag);
       if (name == null) continue;
-      if (routines.containsKey(name)) {
-        days.add(DaySlot(routineId: name));
+      // Die KI schreibt hier die Kennung, die sie selbst vergeben hat.
+      final id = nachRoh[name];
+      if (id != null) {
+        days.add(DaySlot(routineId: id));
         continue;
       }
       // Alles, was keine Einheit ist, ist ein freier Tag. Die KI schreibt da

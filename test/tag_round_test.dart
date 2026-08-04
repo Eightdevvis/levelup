@@ -323,6 +323,126 @@ Klar, hier bitteschön:
       expect(result.error, contains('JSON'));
     });
 
+    test('gibt jeder Einheit eine Kennung, die zum Programm gehört', () {
+      final result = parseRoundTwo('''
+{"program": {"name": "Gehör zuerst", "tags": ["geige"],
+   "phases": [{"name": "A", "days": ["e1", "pause"]}]},
+ "units": [{"id": "e1", "exercises": [{"id": "geige-bordun", "minutes": 5}]}]}
+''', aufgeloest());
+
+      final programId = result.bundle!.programs.single.id;
+      final routineId = result.bundle!.routines.single.id;
+
+      // Die KI nennt ihre Einheiten „e1", „e2", „e3" — jede KI, jedes Mal.
+      // Bliebe das so stehen, hätte der zweite importierte Plan dieselben
+      // Kennungen wie der erste und überschriebe ihn in der Bibliothek.
+      expect(routineId, startsWith(programId));
+      expect(routineId, isNot('e1'));
+
+      // Und der Tagesplan muss auf die neue Kennung zeigen, nicht auf die alte.
+      final days =
+          (result.bundle!.programs.single.phases.single.schedule
+                  as CycleSchedule)
+              .days;
+      expect(days.first.routineId, routineId);
+    });
+
+    test('zwei Pläne kommen sich in der Bibliothek nicht ins Gehege', () {
+      String plan(String name, String uebung) =>
+          '{"program": {"name": "$name", "tags": ["geige"],'
+          ' "phases": [{"name": "A", "days": ["e1"]}]},'
+          ' "units": [{"id": "e1", "name": "Einheit von $name",'
+          ' "exercises": [{"id": "$uebung", "minutes": 5}]}]}';
+
+      final ersterPlan = parseRoundTwo(
+        plan('Gehör zuerst', 'geige-bordun'),
+        aufgeloest(),
+      ).bundle!;
+      final zweiterPlan = parseRoundTwo(
+        plan('Bogen zuerst', 'geige-aufnahme-hoeren'),
+        aufgeloest(),
+      ).bundle!;
+
+      final library = const Library().merge(ersterPlan).merge(zweiterPlan);
+
+      // Genau der gemeldete Fehler: das ältere Programm öffnen und den Inhalt
+      // des zuletzt importierten sehen.
+      for (final bundle in [ersterPlan, zweiterPlan]) {
+        final program = library.program(bundle.programs.single.id)!;
+        final routine = library.routine(program.routineIds.single)!;
+        expect(routine.name, bundle.routines.single.name);
+        expect(
+          routine.slots.single.exerciseId,
+          bundle.routines.single.slots.single.exerciseId,
+        );
+      }
+    });
+
+    test('auch ein eingefügtes Bundle überschreibt keine fremde Einheit', () {
+      // Nicht der Chat-Weg, sondern der Weg „fertiges Bundle einfügen": hier
+      // erfindet die KI die Kennungen selbst, und niemand hält sie ab, „e1" zu
+      // schreiben. Die Bibliothek muss das allein abfangen.
+      Bundle bundle(String programId, String routineName) => Bundle(
+        exercises: [ex('u-$programId', 'Übung', ['geige'])],
+        routines: [
+          Routine(
+            id: 'e1',
+            name: routineName,
+            slots: [ExerciseSlot(exerciseId: 'u-$programId')],
+          ),
+        ],
+        programs: [
+          Program(
+            id: programId,
+            name: programId,
+            tags: const ['geige'],
+            phases: [
+              Phase(
+                id: '$programId-p1',
+                name: 'A',
+                weeks: 1,
+                schedule: CycleSchedule(days: [DaySlot(routineId: 'e1')]),
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final library = const Library()
+          .merge(bundle('alt', 'Einheit des alten Plans'))
+          .merge(bundle('neu', 'Einheit des neuen Plans'));
+
+      final alt = library.program('alt')!;
+      expect(
+        library.routine(alt.routineIds.single)!.name,
+        'Einheit des alten Plans',
+      );
+
+      final neu = library.program('neu')!;
+      expect(
+        library.routine(neu.routineIds.single)!.name,
+        'Einheit des neuen Plans',
+      );
+      expect(library.missingReferences('alt'), isEmpty);
+      expect(library.missingReferences('neu'), isEmpty);
+    });
+
+    test('derselbe Plan zweimal importiert bleibt ein Plan', () {
+      final einmal = parseRoundTwo('''
+{"program": {"name": "P", "tags": ["geige"],
+   "phases": [{"name": "A", "days": ["e1"]}]},
+ "units": [{"id": "e1", "exercises": [{"id": "geige-bordun", "minutes": 5}]}]}
+''', aufgeloest()).bundle!;
+
+      final library = const Library().merge(einmal).merge(einmal);
+
+      // Erneut eingespielt ist eine Aktualisierung, keine Kollision — sonst
+      // sammelte jeder zweite Versuch eine Kopie aller Einheiten an.
+      expect(library.programs, hasLength(1));
+      expect(library.routines, hasLength(1));
+      expect(library.missingReferences(einmal.programs.single.id), isEmpty);
+    });
+
     test('macht aus allem, was keine Einheit ist, einen freien Tag', () {
       final result = parseRoundTwo('''
 {"program": {"name": "P", "phases": [{"name": "A",
