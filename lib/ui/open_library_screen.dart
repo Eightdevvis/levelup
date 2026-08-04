@@ -113,11 +113,17 @@ class _OpenLibraryScreenState extends State<OpenLibraryScreen> {
           ),
         ),
         (null, _) => const Center(child: CircularProgressIndicator()),
+        // „Kein Programm" klang, als wären die eigenen Pläne verschwunden.
+        // Gemeint ist der geteilte Bestand auf dem Server, und dort landet
+        // nichts von allein — deshalb steht es jetzt dabei.
         (final List<CatalogEntry> list, _) when list.isEmpty =>
           const EmptyState(
             icon: Icons.crop_square,
             title: 'noch leer',
-            message: 'In der Bibliothek liegt bisher kein Programm.',
+            message:
+                'Hier liegen geteilte Programme von allen — bisher keins.\n\n'
+                'Deine eigenen Pläne stehen auf der Startseite. Sie kommen '
+                'nicht von selbst hierher.',
           ),
         (final List<CatalogEntry> list, _) => ListView.separated(
           padding: const EdgeInsets.fromLTRB(15, 20, 15, 30),
